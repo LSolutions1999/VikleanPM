@@ -5,6 +5,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { getPropertyById } from "@/lib/mock-data";
 import { requireSession } from "@/lib/session";
 import { PropertyUnitExplorer } from "@/components/PropertyUnitExplorer";
+import { PropertyLocationEditor } from "@/components/PropertyLocationEditor";
+import { getPropertyForDisplay } from "@/lib/supabase/properties";
 
 export default async function PropertyDetailPage({
   params
@@ -13,7 +15,7 @@ export default async function PropertyDetailPage({
 }) {
   await requireSession();
   const { id } = await params;
-  const property = getPropertyById(id);
+  const property = (await getPropertyForDisplay(id)) ?? getPropertyById(id);
 
   if (!property) {
     notFound();
@@ -33,30 +35,7 @@ export default async function PropertyDetailPage({
       />
 
       <div className="detail-grid">
-        <article className="detail-card" style={{ gridColumn: "1 / -1" }}>
-          <p className="eyebrow">Location</p>
-          <h3>Site information</h3>
-          <div className="detail-list">
-            <div className="detail-row">
-              <strong>Address</strong>
-              <span>{property.address}</span>
-            </div>
-            <div className="detail-row">
-              <strong>Total units</strong>
-              <span>{property.units.length}</span>
-            </div>
-            <div className="detail-row">
-              <strong>City / Region</strong>
-              <span>
-                {property.city}, {property.region}
-              </span>
-            </div>
-            <div className="detail-row">
-              <strong>Status</strong>
-              <span>{property.status}</span>
-            </div>
-          </div>
-        </article>
+        <PropertyLocationEditor property={property} propertySlug={id} />
       </div>
 
       <PropertyUnitExplorer property={property} />
