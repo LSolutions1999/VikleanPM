@@ -188,11 +188,19 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
         <div className="unit-grid">
           {units.map((unit) => (
             <button key={unit.id} type="button" className="unit-card" onClick={() => setSelectedUnit(unit)}>
+              {(() => {
+                const unitTenant = getUnitTenant(property, unit);
+
+                return (
+                  <>
               <div className="unit-card-top">
                 <strong>Unit {unit.number}</strong>
                 <span className={`status-pill status-${unit.status.toLowerCase()}`}>{unit.status}</span>
               </div>
-              <p className="unit-card-note">{unit.notes}</p>
+              <p className="unit-card-note">{unitTenant ? unitTenant.name : "Vacant"}</p>
+                  </>
+                );
+              })()}
             </button>
           ))}
         </div>
@@ -233,8 +241,8 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
                 </span>
               </div>
               <div className="detail-row">
-                <strong>Notes</strong>
-                <span>{activeUnit?.notes}</span>
+                <strong>Tenant</strong>
+                <span>{tenant?.name ?? "Vacant"}</span>
               </div>
             </div>
 

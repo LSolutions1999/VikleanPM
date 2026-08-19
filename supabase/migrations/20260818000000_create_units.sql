@@ -18,6 +18,7 @@ create table if not exists public.units (
 
 create index if not exists units_owner_id_idx on public.units (owner_id);
 create index if not exists units_property_id_idx on public.units (property_id);
+create unique index if not exists units_property_id_unit_number_key on public.units (property_id, unit_number);
 
 create or replace function public.set_units_updated_at()
 returns trigger
