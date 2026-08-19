@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import type { Property, Unit } from "@/lib/types";
 import { formatDate } from "@/lib/format";
 
@@ -14,12 +15,24 @@ function getUnitTenant(property: Property, unit: Unit) {
 }
 
 type UnitDraft = Pick<Unit, "number" | "status" | "notes">;
+type TenantDraft = {
+  name: string;
+  phone: string;
+  email: string;
+  leaseStart: string;
+  leaseEnd: string;
+  leaseFileName: string;
+};
 
 export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
+  const supabase = createClient();
   const [units, setUnits] = useState(property.units);
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
   const [tenantView, setTenantView] = useState<"summary" | "contact" | "lease">("summary");
   const [drafts, setDrafts] = useState<Record<string, UnitDraft>>({});
+  const [tenantDrafts, setTenantDrafts] = useState<Record<string, TenantDraft>>({});
+  const [tenantSaving, setTenantSaving] = useState(false);
+  const [tenantError, setTenantError] = useState<string | null>(null);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -37,7 +50,31 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
           number: selectedUnit.number,
           status: selectedUnit.status,
           notes: selectedUnit.notes
-        }
+          }
+        }));
+      const selectedTenant = getUnitTenant(property, selectedUnit);
+
+      setTenantDrafts((current) => ({
+        ...current,
+        [selectedUnit.id]:
+          current[selectedUnit.id] ??
+          (selectedTenant
+            ? {
+                name: selectedTenant.name,
+                phone: selectedTenant.phone,
+                email: selectedTenant.email,
+                leaseStart: selectedTenant.leaseStart,
+                leaseEnd: selectedTenant.leaseEnd,
+                leaseFileName: selectedTenant.leaseFileName
+              }
+            : {
+                name: "",
+                phone: "",
+                email: "",
+                leaseStart: "",
+                leaseEnd: "",
+                leaseFileName: ""
+              })
       }));
     }
 
@@ -47,6 +84,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
   const activeDraft = selectedUnit ? drafts[selectedUnit.id] ?? null : null;
   const activeUnit = selectedUnit && activeDraft ? { ...selectedUnit, ...activeDraft } : selectedUnit;
   const tenant = activeUnit ? getUnitTenant(property, activeUnit) : null;
+  const activeTenantDraft = selectedUnit ? tenantDrafts[selectedUnit.id] ?? null : null;
 
   function updateDraft(field: keyof UnitDraft, value: string) {
     if (!selectedUnit) {
@@ -66,6 +104,26 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
       }));
   }
 
+  function updateTenantDraft(field: keyof TenantDraft, value: string) {
+    if (!selectedUnit) {
+      return;
+    }
+
+    setTenantDrafts((current) => ({
+      ...current,
+      [selectedUnit.id]: {
+        name: field === "name" ? value : current[selectedUnit.id]?.name ?? tenant?.name ?? "",
+        phone: field === "phone" ? value : current[selectedUnit.id]?.phone ?? tenant?.phone ?? "",
+        email: field === "email" ? value : current[selectedUnit.id]?.email ?? tenant?.email ?? "",
+        leaseStart:
+          field === "leaseStart" ? value : current[selectedUnit.id]?.leaseStart ?? tenant?.leaseStart ?? "",
+        leaseEnd: field === "leaseEnd" ? value : current[selectedUnit.id]?.leaseEnd ?? tenant?.leaseEnd ?? "",
+        leaseFileName:
+          field === "leaseFileName" ? value : current[selectedUnit.id]?.leaseFileName ?? tenant?.leaseFileName ?? ""
+      }
+    }));
+  }
+
   function saveUnitChanges() {
     if (!selectedUnit || !activeDraft) {
       return;
@@ -75,6 +133,51 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
       current.map((unit) => (unit.id === selectedUnit.id ? { ...unit, ...activeDraft } : unit))
     );
     setSelectedUnit((current) => (current ? { ...current, ...activeDraft } : current));
+  }
+
+  async function saveTenantChanges() {
+    if (!selectedUnit || !activeTenantDraft) {
+      return;
+    }
+
+    setTenantSaving(true);
+    setTenantError(null);
+
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setTenantError("You need to be signed in to save tenant details.");
+      setTenantSaving(false);
+      return;
+    }
+
+    const { error: saveError } = await supabase.from("tenants").upsert(
+      {
+        unit_id: selectedUnit.id,
+        property_slug: property.id,
+        owner_id: user.id,
+        name: activeTenantDraft.name,
+        phone: activeTenantDraft.phone || null,
+        email: activeTenantDraft.email || null,
+        lease_start: activeTenantDraft.leaseStart || null,
+        lease_end: activeTenantDraft.leaseEnd || null,
+        lease_file_name: activeTenantDraft.leaseFileName || null
+      },
+      {
+        onConflict: "unit_id"
+      }
+    );
+
+    setTenantSaving(false);
+
+    if (saveError) {
+      setTenantError(saveError.message);
+      return;
+    }
+
+    window.location.reload();
   }
 
   return (
@@ -223,8 +326,66 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
                   ) : null}
                 </div>
               ) : (
-                <p className="page-description">No tenant assigned to this unit.</p>
+                <p className="page-description">No tenant assigned to this unit yet.</p>
               )}
+
+              <div className="modal-section">
+                <p className="eyebrow">{tenant ? "Edit tenant info" : "Add tenant info"}</p>
+                <div className="form-grid">
+                  <label className="full">
+                    <span>Name</span>
+                    <input
+                      value={activeTenantDraft?.name ?? ""}
+                      onChange={(event) => updateTenantDraft("name", event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    <span>Phone</span>
+                    <input
+                      value={activeTenantDraft?.phone ?? ""}
+                      onChange={(event) => updateTenantDraft("phone", event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    <span>Email</span>
+                    <input
+                      value={activeTenantDraft?.email ?? ""}
+                      onChange={(event) => updateTenantDraft("email", event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    <span>Lease start</span>
+                    <input
+                      type="date"
+                      value={activeTenantDraft?.leaseStart ?? ""}
+                      onChange={(event) => updateTenantDraft("leaseStart", event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    <span>Lease end</span>
+                    <input
+                      type="date"
+                      value={activeTenantDraft?.leaseEnd ?? ""}
+                      onChange={(event) => updateTenantDraft("leaseEnd", event.target.value)}
+                    />
+                  </label>
+                  <label className="full">
+                    <span>Lease file name</span>
+                    <input
+                      value={activeTenantDraft?.leaseFileName ?? ""}
+                      onChange={(event) => updateTenantDraft("leaseFileName", event.target.value)}
+                    />
+                  </label>
+                </div>
+
+                {tenantError ? <p className="form-message">{tenantError}</p> : null}
+
+                <div className="modal-actions">
+                  <button type="button" className="primary-button" onClick={saveTenantChanges} disabled={tenantSaving}>
+                    {tenantSaving ? "Saving..." : "Save tenant info"}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
