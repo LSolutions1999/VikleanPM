@@ -24,15 +24,25 @@ type TenantDraft = {
   leaseFileName: string;
 };
 
+type NewUnitDraft = {
+  number: string;
+  status: Unit["status"];
+  notes: string;
+};
+
 export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
   const supabase = createClient();
   const [units, setUnits] = useState(property.units);
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
+  const [isAddingUnit, setIsAddingUnit] = useState(false);
   const [tenantView, setTenantView] = useState<"summary" | "contact" | "lease">("summary");
   const [drafts, setDrafts] = useState<Record<string, UnitDraft>>({});
   const [tenantDrafts, setTenantDrafts] = useState<Record<string, TenantDraft>>({});
+  const [newUnitDraft, setNewUnitDraft] = useState<NewUnitDraft>({ number: "", status: "Vacant", notes: "" });
   const [unitSaving, setUnitSaving] = useState(false);
   const [unitError, setUnitError] = useState<string | null>(null);
+  const [addUnitSaving, setAddUnitSaving] = useState(false);
+  const [addUnitError, setAddUnitError] = useState<string | null>(null);
   const [tenantSaving, setTenantSaving] = useState(false);
   const [tenantError, setTenantError] = useState<string | null>(null);
 
@@ -98,6 +108,10 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
     }
 
     return "vacant";
+  }
+
+  function makeSourceUnitId(propertyId: string, unitNumber: string) {
+    return `${propertyId}-${unitNumber.trim()}-${crypto.randomUUID()}`;
   }
 
   function updateDraft(field: keyof UnitDraft, value: string) {
@@ -181,6 +195,88 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
     window.location.reload();
   }
 
+  async function addUnit() {
+    const unitNumber = newUnitDraft.number.trim();
+
+    if (!unitNumber) {
+      setAddUnitError("Unit number is required.");
+      return;
+    }
+
+    setAddUnitSaving(true);
+    setAddUnitError(null);
+
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setAddUnitError("You need to be signed in to add units.");
+      setAddUnitSaving(false);
+      return;
+    }
+
+    const sourceUnitId = makeSourceUnitId(property.id, unitNumber);
+
+    const { error: saveError } = await supabase.from("units").insert({
+      source_unit_id: sourceUnitId,
+      property_id: property.id,
+      owner_id: user.id,
+      unit_number: unitNumber,
+      address: property.address,
+      status: toDatabaseUnitStatus(newUnitDraft.status),
+      notes: newUnitDraft.notes
+    });
+
+    setAddUnitSaving(false);
+
+    if (saveError) {
+      setAddUnitError(saveError.message);
+      return;
+    }
+
+    setNewUnitDraft({ number: "", status: "Vacant", notes: "" });
+    window.location.reload();
+  }
+
+  async function deleteUnit() {
+    if (!selectedUnit) {
+      return;
+    }
+
+    setUnitSaving(true);
+    setUnitError(null);
+
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setUnitError("You need to be signed in to delete units.");
+      setUnitSaving(false);
+      return;
+    }
+
+    const { error: tenantDeleteError } = await supabase.from("tenants").delete().eq("unit_id", selectedUnit.id);
+    if (tenantDeleteError) {
+      setUnitError(tenantDeleteError.message);
+      setUnitSaving(false);
+      return;
+    }
+
+    const { error: deleteError } = await supabase.from("units").delete().eq("source_unit_id", selectedUnit.id);
+
+    setUnitSaving(false);
+
+    if (deleteError) {
+      setUnitError(deleteError.message);
+      return;
+    }
+
+    setSelectedUnit(null);
+    window.location.reload();
+  }
+
   async function saveTenantChanges() {
     if (!selectedUnit || !activeTenantDraft) {
       return;
@@ -230,7 +326,48 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
     <>
       <section className="panel">
         <p className="eyebrow">Units</p>
-        <h3>Tap a unit to view details</h3>
+        <div className="modal-section-header">
+          <h3>Tap a unit to view details</h3>
+          <button type="button" className="primary-button" onClick={() => setIsAddingUnit((current) => !current)}>
+            {isAddingUnit ? "Close add form" : "Add unit"}
+          </button>
+        </div>
+        {isAddingUnit ? (
+          <div className="modal-section">
+            <p className="eyebrow">Add unit</p>
+            <div className="form-grid">
+              <label>
+                <span>Unit number</span>
+                <input value={newUnitDraft.number} onChange={(event) => setNewUnitDraft((current) => ({ ...current, number: event.target.value }))} />
+              </label>
+              <label>
+                <span>Status</span>
+                <select
+                  value={newUnitDraft.status}
+                  onChange={(event) => setNewUnitDraft((current) => ({ ...current, status: event.target.value as Unit["status"] }))}
+                >
+                  <option>Vacant</option>
+                  <option>Occupied</option>
+                  <option>Maintenance</option>
+                </select>
+              </label>
+              <label className="full">
+                <span>Notes</span>
+                <textarea
+                  rows={4}
+                  value={newUnitDraft.notes}
+                  onChange={(event) => setNewUnitDraft((current) => ({ ...current, notes: event.target.value }))}
+                />
+              </label>
+            </div>
+            {addUnitError ? <p className="form-message">{addUnitError}</p> : null}
+            <div className="modal-actions">
+              <button type="button" className="primary-button" onClick={addUnit} disabled={addUnitSaving}>
+                {addUnitSaving ? "Adding..." : "Create unit"}
+              </button>
+            </div>
+          </div>
+        ) : null}
         <div className="unit-grid">
           {units.map((unit) => (
             <button key={unit.id} type="button" className="unit-card" onClick={() => setSelectedUnit(unit)}>
@@ -318,6 +455,9 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
               </div>
               {unitError ? <p className="form-message">{unitError}</p> : null}
               <div className="modal-actions">
+                <button type="button" className="ghost-button" onClick={deleteUnit} disabled={unitSaving}>
+                  Delete unit
+                </button>
                 <button type="button" className="primary-button" onClick={saveUnitChanges} disabled={unitSaving}>
                   {unitSaving ? "Saving..." : "Save unit"}
                 </button>
