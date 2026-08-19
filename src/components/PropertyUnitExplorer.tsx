@@ -257,14 +257,38 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
       return;
     }
 
-    const { error: tenantDeleteError } = await supabase.from("tenants").delete().eq("unit_id", selectedUnit.id);
+    const unitNumber = activeDraft?.number ?? selectedUnit.number;
+    const { data: savedUnit, error: lookupError } = await supabase
+      .from("units")
+      .select("source_unit_id, unit_number")
+      .eq("property_id", property.id)
+      .eq("unit_number", unitNumber)
+      .maybeSingle();
+
+    if (lookupError) {
+      setUnitError(lookupError.message);
+      setUnitSaving(false);
+      return;
+    }
+
+    const resolvedUnitId = savedUnit?.source_unit_id ?? selectedUnit.id;
+
+    const { error: tenantDeleteError } = await supabase
+      .from("tenants")
+      .delete()
+      .eq("property_slug", property.id)
+      .in("unit_id", [selectedUnit.id, resolvedUnitId]);
     if (tenantDeleteError) {
       setUnitError(tenantDeleteError.message);
       setUnitSaving(false);
       return;
     }
 
-    const { error: deleteError } = await supabase.from("units").delete().eq("source_unit_id", selectedUnit.id);
+    const { error: deleteError } = await supabase
+      .from("units")
+      .delete()
+      .eq("property_id", property.id)
+      .eq("unit_number", unitNumber);
 
     setUnitSaving(false);
 
