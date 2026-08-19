@@ -31,6 +31,8 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
   const [tenantView, setTenantView] = useState<"summary" | "contact" | "lease">("summary");
   const [drafts, setDrafts] = useState<Record<string, UnitDraft>>({});
   const [tenantDrafts, setTenantDrafts] = useState<Record<string, TenantDraft>>({});
+  const [unitSaving, setUnitSaving] = useState(false);
+  const [unitError, setUnitError] = useState<string | null>(null);
   const [tenantSaving, setTenantSaving] = useState(false);
   const [tenantError, setTenantError] = useState<string | null>(null);
 
@@ -86,6 +88,18 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
   const tenant = activeUnit ? getUnitTenant(property, activeUnit) : null;
   const activeTenantDraft = selectedUnit ? tenantDrafts[selectedUnit.id] ?? null : null;
 
+  function toDatabaseUnitStatus(status: Unit["status"]) {
+    if (status === "Occupied") {
+      return "occupied";
+    }
+
+    if (status === "Maintenance") {
+      return "maintenance";
+    }
+
+    return "vacant";
+  }
+
   function updateDraft(field: keyof UnitDraft, value: string) {
     if (!selectedUnit) {
       return;
@@ -124,15 +138,47 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
     }));
   }
 
-  function saveUnitChanges() {
+  async function saveUnitChanges() {
     if (!selectedUnit || !activeDraft) {
       return;
     }
 
-    setUnits((current) =>
-      current.map((unit) => (unit.id === selectedUnit.id ? { ...unit, ...activeDraft } : unit))
+    setUnitSaving(true);
+    setUnitError(null);
+
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setUnitError("You need to be signed in to save unit details.");
+      setUnitSaving(false);
+      return;
+    }
+
+    const { error: saveError } = await supabase.from("units").upsert(
+      {
+        source_unit_id: selectedUnit.id,
+        property_id: property.id,
+        owner_id: user.id,
+        unit_number: activeDraft.number,
+        address: property.address,
+        status: toDatabaseUnitStatus(activeDraft.status),
+        notes: activeDraft.notes
+      },
+      {
+        onConflict: "source_unit_id"
+      }
     );
-    setSelectedUnit((current) => (current ? { ...current, ...activeDraft } : current));
+
+    setUnitSaving(false);
+
+    if (saveError) {
+      setUnitError(saveError.message);
+      return;
+    }
+
+    window.location.reload();
   }
 
   async function saveTenantChanges() {
@@ -270,9 +316,10 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
                   />
                 </label>
               </div>
+              {unitError ? <p className="form-message">{unitError}</p> : null}
               <div className="modal-actions">
-                <button type="button" className="primary-button" onClick={saveUnitChanges}>
-                  Save unit
+                <button type="button" className="primary-button" onClick={saveUnitChanges} disabled={unitSaving}>
+                  {unitSaving ? "Saving..." : "Save unit"}
                 </button>
               </div>
             </div>

@@ -20,6 +20,31 @@ type TenantRecord = {
   lease_file_name: string | null;
 };
 
+type UnitRecord = {
+  source_unit_id: string | null;
+  property_id: string;
+  unit_number: string;
+  address: string | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  square_feet: number | null;
+  rent_amount: number | null;
+  status: string;
+  notes: string | null;
+};
+
+function toDisplayUnitStatus(value: string) {
+  if (value === "occupied") {
+    return "Occupied";
+  }
+
+  if (value === "maintenance") {
+    return "Maintenance";
+  }
+
+  return "Vacant";
+}
+
 function mergePropertyRecord(base: Property, record: Partial<PropertyRecord>): Property {
   return {
     ...base,
@@ -54,7 +79,32 @@ function hydrateTenants(baseProperty: Property, rows: TenantRecord[]) {
   return Array.from(tenantsByUnitId.values());
 }
 
-function hydrateFromSupabase(baseProperties: Property[], rows: PropertyRecord[], tenantRows: TenantRecord[]) {
+function hydrateUnits(baseProperty: Property, rows: UnitRecord[]) {
+  const unitsBySourceId = new Map(baseProperty.units.map((unit) => [unit.id, unit]));
+
+  rows
+    .filter((unit) => unit.property_id === baseProperty.id)
+    .forEach((unit) => {
+      const sourceId = unit.source_unit_id ?? `${baseProperty.id}-${unit.unit_number}`;
+      unitsBySourceId.set(sourceId, {
+        id: sourceId,
+        propertyId: baseProperty.id,
+        number: unit.unit_number,
+        status: toDisplayUnitStatus(unit.status),
+        notes: unit.notes ?? "",
+        tenantId: baseProperty.tenants.find((tenant) => tenant.unitId === sourceId)?.id
+      });
+    });
+
+  return Array.from(unitsBySourceId.values());
+}
+
+function hydrateFromSupabase(
+  baseProperties: Property[],
+  rows: PropertyRecord[],
+  tenantRows: TenantRecord[],
+  unitRows: UnitRecord[]
+) {
   const recordsBySlug = new Map(rows.map((row) => [row.slug, row]));
 
   return baseProperties.map((property) => {
@@ -63,6 +113,7 @@ function hydrateFromSupabase(baseProperties: Property[], rows: PropertyRecord[],
 
     return {
       ...mergedProperty,
+      units: hydrateUnits(mergedProperty, unitRows),
       tenants: hydrateTenants(mergedProperty, tenantRows)
     };
   });
@@ -79,6 +130,10 @@ export async function getPropertyForDisplay(slug: string) {
     .from("tenants")
     .select("id, unit_id, property_slug, owner_id, name, phone, email, lease_start, lease_end, lease_file_name")
     .eq("property_slug", slug);
+  const { data: unitData } = await supabase
+    .from("units")
+    .select("source_unit_id, property_id, unit_number, address, bedrooms, bathrooms, square_feet, rent_amount, status, notes")
+    .eq("property_id", slug);
 
   if (data && !error) {
     const baseProperty = getPropertyById(slug);
@@ -89,6 +144,7 @@ export async function getPropertyForDisplay(slug: string) {
 
     return {
       ...mergePropertyRecord(baseProperty, data as PropertyRecord),
+      units: hydrateUnits(baseProperty, (unitData ?? []) as UnitRecord[]),
       tenants: hydrateTenants(baseProperty, (tenantData ?? []) as TenantRecord[])
     };
   }
@@ -113,10 +169,19 @@ export async function getVisiblePropertiesForDisplay(role: string) {
     .from("tenants")
     .select("id, unit_id, property_slug, owner_id, name, phone, email, lease_start, lease_end, lease_file_name")
     .in("property_slug", slugs);
+  const { data: unitData } = await supabase
+    .from("units")
+    .select("source_unit_id, property_id, unit_number, address, bedrooms, bathrooms, square_feet, rent_amount, status, notes")
+    .in("property_id", slugs);
 
   if (!data || error) {
     return baseProperties;
   }
 
-  return hydrateFromSupabase(baseProperties, data as PropertyRecord[], (tenantData ?? []) as TenantRecord[]);
+  return hydrateFromSupabase(
+    baseProperties,
+    data as PropertyRecord[],
+    (tenantData ?? []) as TenantRecord[],
+    (unitData ?? []) as UnitRecord[]
+  );
 }

@@ -2,6 +2,7 @@ create extension if not exists pgcrypto;
 
 create table if not exists public.units (
   id uuid primary key default gen_random_uuid(),
+  source_unit_id text unique,
   unit_number text not null,
   property_id text not null,
   owner_id uuid not null references auth.users (id) on delete cascade,
