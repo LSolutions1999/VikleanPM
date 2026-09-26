@@ -54,23 +54,106 @@ button {
 }
 
 .app-shell {
-  display: grid;
-  grid-template-columns: 288px minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
-.sidebar {
+.app-header {
   position: sticky;
   top: 0;
-  align-self: start;
-  min-height: 100vh;
-  padding: 28px 22px;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-  background: #1e2125;
-  backdrop-filter: blur(14px);
+  z-index: 30;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  align-items: center;
+  gap: 10px;
+  padding: 12px clamp(18px, 3vw, 40px) 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(30, 33, 37, 0.96);
+  backdrop-filter: blur(16px);
+}
+
+.header-top-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  width: 100%;
+}
+
+.app-header .brand {
+  grid-column: 2;
+  min-width: 0;
+  gap: 12px;
+}
+
+.app-header .brand-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.app-header .brand-kicker {
+  margin-bottom: 2px;
+}
+
+.app-header .brand h1 {
+  font-size: 1.2rem;
+  white-space: nowrap;
+}
+
+.app-header .nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.app-header .nav-link {
+  gap: 9px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.app-header .nav-link:hover {
+  transform: translateY(-1px);
+}
+
+.header-account {
+  grid-column: 3;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.header-user {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+
+.header-user strong {
+  font-size: 0.9rem;
+}
+
+.header-user .session-role {
+  font-size: 0.64rem;
+}
+
+.header-email {
+  overflow: hidden;
+  max-width: 190px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sign-out-button {
+  width: auto;
+  padding: 10px 13px;
+  white-space: nowrap;
 }
 
 .brand {
@@ -122,11 +205,6 @@ button {
   color: var(--accent-strong);
 }
 
-.nav {
-  display: grid;
-  gap: 10px;
-}
-
 .nav-link {
   display: flex;
   align-items: center;
@@ -147,12 +225,6 @@ button {
 .nav-icon {
   display: inline-flex;
   color: var(--accent-strong);
-}
-
-.sidebar-footer {
-  margin-top: auto;
-  display: grid;
-  gap: 14px;
 }
 
 .session-card,
@@ -924,16 +996,19 @@ button {
 }
 
 @media (max-width: 1180px) {
-  .app-shell,
   .auth-card,
   .task-layout,
   .content-grid {
     grid-template-columns: 1fr;
   }
 
-  .sidebar {
-    position: relative;
-    min-height: auto;
+  .app-header {
+    gap: 10px;
+    padding-inline: 20px;
+  }
+
+  .header-email {
+    max-width: 140px;
   }
 
   .toolbar,
@@ -953,8 +1028,73 @@ button {
     padding: 16px;
   }
 
-  .sidebar {
-    padding: 18px;
+  .app-header {
+    position: sticky;
+    gap: 8px;
+    padding: 10px 12px 8px;
+  }
+
+  .header-top-row {
+    display: flex;
+    justify-content: center;
+    min-height: 40px;
+  }
+
+  .app-header .brand {
+    gap: 9px;
+    max-width: calc(100% - 42px);
+  }
+
+  .app-header .brand-mark {
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .app-header .brand h1 {
+    overflow-wrap: anywhere;
+    font-size: 0.82rem;
+    white-space: normal;
+  }
+
+  .app-header .nav {
+    width: 100%;
+    justify-content: center;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .app-header .nav-link {
+    padding: 9px 12px;
+  }
+
+  .header-account {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    gap: 0;
+  }
+
+  .header-user strong {
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .header-user .session-role,
+  .header-email {
+    display: none;
+  }
+
+  .sign-out-button {
+    padding: 9px 7px;
+    font-size: 0;
+  }
+
+  .sign-out-button svg {
+    width: 18px;
+    height: 18px;
   }
 
   .toolbar,

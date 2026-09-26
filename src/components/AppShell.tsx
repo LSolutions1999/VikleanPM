@@ -26,10 +26,27 @@ export function AppShell({
 }) {
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <BrandLogo title="VikleanWork" subtitle="Property Manager" />
+      <header className="app-header">
+        <div className="header-top-row">
+          <BrandLogo title="VikleanPM: Property Management App" subtitle="" />
 
-        <nav className="nav">
+          <div className="header-account">
+            <div className="header-user">
+              <p className="session-role">{session.role}</p>
+              <strong>{session.name}</strong>
+              <span className="header-email">{session.email}</span>
+            </div>
+
+            <form action={signOutAction}>
+              <button className="ghost-button sign-out-button" type="submit">
+                <LogOut size={16} />
+                Sign out
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <nav className="nav" aria-label="Main navigation">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href} className="nav-link">
               <span className="nav-icon">{item.icon}</span>
@@ -37,22 +54,7 @@ export function AppShell({
             </Link>
           ))}
         </nav>
-
-        <div className="sidebar-footer">
-          <div className="session-card">
-            <p className="session-role">{session.role}</p>
-            <strong>{session.name}</strong>
-            <span>{session.email}</span>
-          </div>
-
-          <form action={signOutAction}>
-            <button className="ghost-button" type="submit">
-              <LogOut size={16} />
-              Sign out
-            </button>
-          </form>
-        </div>
-      </aside>
+      </header>
 
       <main className="main-panel">{children}</main>
     </div>
