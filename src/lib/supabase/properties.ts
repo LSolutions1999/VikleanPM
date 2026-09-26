@@ -2,8 +2,14 @@ import { createClient } from "@/lib/supabase/server";
 import { getPropertyById, getVisibleProperties } from "@/lib/mock-data";
 import type { Property } from "@/lib/types";
 
-type PropertyRecord = Property & {
+type PropertyRecord = {
   slug: string;
+  name: string;
+  address: string | null;
+  city: string | null;
+  region: string | null;
+  status: Property["status"];
+  notes: string | null;
   owner_id: string;
 };
 
@@ -57,6 +63,21 @@ function mergePropertyRecord(base: Property, record: Partial<PropertyRecord>): P
   };
 }
 
+function propertyFromRecord(record: PropertyRecord): Property {
+  return {
+    id: record.slug,
+    name: record.name,
+    address: record.address ?? "",
+    city: record.city ?? "",
+    region: record.region ?? "",
+    status: record.status,
+    units: [],
+    documents: [],
+    tenants: [],
+    notes: record.notes ?? ""
+  };
+}
+
 function hydrateTenants(baseProperty: Property, rows: TenantRecord[]) {
   const tenantsByUnitId = new Map(baseProperty.tenants.map((tenant) => [tenant.unitId, tenant]));
 
@@ -106,8 +127,13 @@ function hydrateFromSupabase(
   unitRows: UnitRecord[]
 ) {
   const recordsBySlug = new Map(rows.map((row) => [row.slug, row]));
+  const baseBySlug = new Map(baseProperties.map((property) => [property.id, property]));
+  const allProperties = [
+    ...baseProperties,
+    ...rows.filter((row) => !baseBySlug.has(row.slug)).map(propertyFromRecord)
+  ];
 
-  return baseProperties.map((property) => {
+  return allProperties.map((property) => {
     const record = recordsBySlug.get(property.id);
     const mergedProperty = record ? mergePropertyRecord(property, record) : property;
 
@@ -136,14 +162,11 @@ export async function getPropertyForDisplay(slug: string) {
     .eq("property_id", slug);
 
   if (data && !error) {
-    const baseProperty = getPropertyById(slug);
-
-    if (!baseProperty) {
-      return null;
-    }
+    const record = data as PropertyRecord;
+    const baseProperty = getPropertyById(slug) ?? propertyFromRecord(record);
 
     return {
-      ...mergePropertyRecord(baseProperty, data as PropertyRecord),
+      ...mergePropertyRecord(baseProperty, record),
       units: hydrateUnits(baseProperty, (unitData ?? []) as UnitRecord[]),
       tenants: hydrateTenants(baseProperty, (tenantData ?? []) as TenantRecord[])
     };
@@ -155,16 +178,16 @@ export async function getPropertyForDisplay(slug: string) {
 export async function getVisiblePropertiesForDisplay(role: string) {
   const baseProperties = getVisibleProperties(role);
   const supabase = await createClient();
-  const slugs = baseProperties.map((property) => property.id);
+  const { data, error } = await supabase
+    .from("properties")
+    .select("slug, name, address, city, region, status, notes, owner_id");
 
-  if (!slugs.length) {
+  if (!data || error) {
     return baseProperties;
   }
 
-  const { data, error } = await supabase
-    .from("properties")
-    .select("slug, name, address, city, region, status, notes, owner_id")
-    .in("slug", slugs);
+  const propertyRows = data as PropertyRecord[];
+  const slugs = Array.from(new Set([...baseProperties.map((property) => property.id), ...propertyRows.map((row) => row.slug)]));
   const { data: tenantData } = await supabase
     .from("tenants")
     .select("id, unit_id, property_slug, owner_id, name, phone, email, lease_start, lease_end, lease_file_name")
@@ -174,13 +197,9 @@ export async function getVisiblePropertiesForDisplay(role: string) {
     .select("source_unit_id, property_id, unit_number, address, bedrooms, bathrooms, square_feet, rent_amount, status, notes")
     .in("property_id", slugs);
 
-  if (!data || error) {
-    return baseProperties;
-  }
-
   return hydrateFromSupabase(
     baseProperties,
-    data as PropertyRecord[],
+    propertyRows,
     (tenantData ?? []) as TenantRecord[],
     (unitData ?? []) as UnitRecord[]
   );

@@ -17,7 +17,12 @@ const bodyFont = IBM_Plex_Sans({
 
 export const metadata: Metadata = {
   title: "VikleanWork | Property Manager",
-  description: "VikleanWork property management workspace"
+  description: "VikleanWork property management workspace",
+  icons: {
+    icon: "/vikleanworklogored.png",
+    shortcut: "/vikleanworklogored.png",
+    apple: "/vikleanworklogored.png"
+  }
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

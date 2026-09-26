@@ -57,11 +57,7 @@ const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const blankTask = {
   title: "",
   description: "",
-  tools: "None",
-  priority: "" as "" | `${TaskPriority}`,
   delegation: "",
-  propertyId: "",
-  unitId: "",
   deadlineDate: "",
   deadlineTime: "12:00",
   deadlineOpen: true
@@ -195,14 +191,13 @@ export function TaskWorkspace({ initialTasks, properties, session }: TaskWorkspa
       title: newTask.title.trim(),
       description: newTask.description.trim(),
       dueDate,
-      priority: newTask.priority ? Number(newTask.priority) as TaskPriority : null,
+      priority: null,
       status: "Pending",
-      propertyId: newTask.propertyId,
-      unitId: newTask.unitId || undefined,
+      propertyId: "",
       assignedTo: newTask.delegation.trim(),
       createdAt: now,
       createdBy: session.name,
-      tools: newTask.tools.trim() || "None",
+      tools: "None",
       notes: [],
       attachments: [],
       progressStatus: "To Do",
@@ -403,17 +398,12 @@ export function TaskWorkspace({ initialTasks, properties, session }: TaskWorkspa
         <section className="panel task-submit-panel">
           <div>
             <p className="eyebrow">Submit a task</p>
-            <h3>Describe the work</h3>
           </div>
           <form className="task-submit-form" onSubmit={submitNewTask}>
             <div className="form-grid">
               <label><span>Task title</span><input required value={newTask.title} onChange={(event) => setNewTask({ ...newTask, title: event.target.value })} placeholder="Replace hallway light fixture" /></label>
               <label><span>For / delegation</span><input required value={newTask.delegation} onChange={(event) => setNewTask({ ...newTask, delegation: event.target.value })} placeholder="Person responsible" /></label>
               <label className="full"><span>Description</span><textarea required rows={4} value={newTask.description} onChange={(event) => setNewTask({ ...newTask, description: event.target.value })} placeholder="Location, job type, and assignment details" /></label>
-              <label><span>Property</span><select required value={newTask.propertyId} onChange={(event) => setNewTask({ ...newTask, propertyId: event.target.value, unitId: "" })}><option value="">Choose property</option>{properties.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}</select></label>
-              <label><span>Unit (optional)</span><select value={newTask.unitId} onChange={(event) => setNewTask({ ...newTask, unitId: event.target.value })} disabled={!newTask.propertyId}><option value="">Property-wide</option>{properties.find((property) => property.id === newTask.propertyId)?.units.map((unit) => <option key={unit.id} value={unit.id}>{unit.number}</option>)}</select></label>
-              <label><span>Priority</span><select value={newTask.priority} onChange={(event) => setNewTask({ ...newTask, priority: event.target.value as typeof blankTask.priority })}><option value="">Optional</option>{priorityLevels.map((item) => <option key={item.level} value={item.level}>{item.level} · {item.label}</option>)}</select></label>
-              <label><span>Tools / materials needed</span><input value={newTask.tools} onChange={(event) => setNewTask({ ...newTask, tools: event.target.value })} placeholder="Drill, ladder, or provided" /></label>
               <label><span>Deadline date</span><input type="date" value={newTask.deadlineDate} disabled={newTask.deadlineOpen} onChange={(event) => setNewTask({ ...newTask, deadlineDate: event.target.value })} /></label>
               <label><span>Deadline time</span><input type="time" value={newTask.deadlineTime} disabled={newTask.deadlineOpen || !newTask.deadlineDate} onChange={(event) => setNewTask({ ...newTask, deadlineTime: event.target.value })} /></label>
               <label className="full task-open-deadline"><input type="checkbox" checked={newTask.deadlineOpen} onChange={(event) => setNewTask({ ...newTask, deadlineOpen: event.target.checked })} /><span>Open deadline</span></label>
@@ -448,10 +438,7 @@ export function TaskWorkspace({ initialTasks, properties, session }: TaskWorkspa
             <div><dt>Task</dt><dd>{newTask.title}</dd></div>
             <div><dt>For</dt><dd>{newTask.delegation}</dd></div>
             <div><dt>Description</dt><dd>{newTask.description}</dd></div>
-            <div><dt>Priority</dt><dd>{newTask.priority ? `${newTask.priority} · ${priorityName(Number(newTask.priority) as TaskPriority)}` : "Optional"}</dd></div>
             <div><dt>Deadline</dt><dd>{newTask.deadlineOpen || !newTask.deadlineDate ? "Open" : formatTaskDate(`${newTask.deadlineDate}T${newTask.deadlineTime || "12:00"}`)}</dd></div>
-            <div><dt>Property</dt><dd>{properties.find((property) => property.id === newTask.propertyId)?.name ?? ""}</dd></div>
-            <div><dt>Tools / materials</dt><dd>{newTask.tools || "None"}</dd></div>
           </dl>
           <div className="modal-actions"><button type="button" className="ghost-button" onClick={() => setConfirmingNewTask(false)}>Back</button><button type="button" className="primary-button" onClick={createTask}>Confirm &amp; Add Task</button></div>
         </Modal>

@@ -15,7 +15,7 @@ export default async function PropertiesPage() {
         description="Browse your properties, units, tenants, and documents."
       />
 
-      <PropertyDirectory properties={properties} role={session.role} />
+      <PropertyDirectory properties={properties} />
     </div>
   );
 }

@@ -9,7 +9,7 @@ type PropertyLocationEditorProps = {
   propertySlug: string;
 };
 
-type PropertyDraft = Pick<Property, "name" | "address" | "city" | "region" | "status" | "notes">;
+type PropertyDraft = Pick<Property, "name" | "address" | "city" | "region" | "notes">;
 
 export function PropertyLocationEditor({ property, propertySlug }: PropertyLocationEditorProps) {
   const supabase = createClient();
@@ -18,7 +18,6 @@ export function PropertyLocationEditor({ property, propertySlug }: PropertyLocat
     address: property.address,
     city: property.city,
     region: property.region,
-    status: property.status,
     notes: property.notes
   });
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -31,7 +30,6 @@ export function PropertyLocationEditor({ property, propertySlug }: PropertyLocat
       address: property.address,
       city: property.city,
       region: property.region,
-      status: property.status,
       notes: property.notes
     });
     setSavedAt(null);
@@ -114,14 +112,6 @@ export function PropertyLocationEditor({ property, propertySlug }: PropertyLocat
           <label>
             <span>Region</span>
             <input value={draft.region} onChange={(event) => updateField("region", event.target.value)} />
-          </label>
-          <label>
-            <span>Status</span>
-            <select value={draft.status} onChange={(event) => updateField("status", event.target.value as Property["status"])}>
-              <option value="Active">Active</option>
-              <option value="Needs review">Needs review</option>
-              <option value="Vacant">Vacant</option>
-            </select>
           </label>
           <label className="full">
             <span>Notes</span>

@@ -82,49 +82,7 @@ const documents: DocumentRecord[] = [
   }
 ];
 
-const tasks: Task[] = [
-  {
-    id: "task-1",
-    title: "Replace hallway light fixture",
-    description: "Hallway on 2nd floor is flickering in the north stairwell.",
-    dueDate: "2026-07-08",
-    priority: 2,
-    status: "Pending",
-    propertyId: "p1",
-    unitId: undefined,
-    assignedTo: "Noah Bennett",
-    createdAt: "2026-07-04T10:00:00Z",
-    notes: [{ id: "n1", note: "Quoted parts from supplier.", createdAt: "2026-07-04T16:00:00Z" }],
-    attachments: [{ id: "a1", fileName: "hallway-light.jpg", fileType: "image" }]
-  },
-  {
-    id: "task-2",
-    title: "Inspect Unit 3A for move-out",
-    description: "Walk-through required before end of lease.",
-    dueDate: "2026-07-10",
-    priority: 3,
-    status: "In Progress",
-    propertyId: "p2",
-    unitId: "p2-u3",
-    assignedTo: "Marta Singh",
-    createdAt: "2026-07-02T15:45:00Z",
-    notes: [{ id: "n2", note: "Tenant confirmed access window.", createdAt: "2026-07-05T12:00:00Z" }],
-    attachments: []
-  },
-  {
-    id: "task-3",
-    title: "Archive roof inspection notes",
-    description: "Upload signed report and mark complete once filed.",
-    dueDate: "2026-07-03",
-    priority: 4,
-    status: "Completed",
-    propertyId: "p3",
-    assignedTo: "Avery Cole",
-    createdAt: "2026-06-29T13:30:00Z",
-    notes: [{ id: "n3", note: "Signed copy stored in documents.", createdAt: "2026-07-03T11:15:00Z" }],
-    attachments: [{ id: "a2", fileName: "roof-inspection-signed.pdf", fileType: "pdf" }]
-  }
-];
+const tasks: Task[] = [];
 
 type PropertySeed = {
   id: string;

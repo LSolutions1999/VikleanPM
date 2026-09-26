@@ -753,6 +753,8 @@ button {
 
 /* Task workflow modeled on Viklean Work. */
 .task-workspace { display: grid; gap: 16px; }
+.property-directory-toolbar { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 14px; }
+.property-create-form { width: 100%; max-width: 900px; }
 .task-tabs, .task-view-switch { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .task-tabs { padding: 6px; width: fit-content; border-radius: 999px; background: rgba(255,255,255,.04); }
 .task-tab { border: 0; border-radius: 999px; padding: 11px 18px; color: var(--muted); background: transparent; font-weight: 650; }
@@ -1171,6 +1173,8 @@ button {
   }
 
   .task-toolbar { grid-template-columns: 1fr; }
+  .property-directory-toolbar { grid-template-columns: 1fr; }
+  .property-directory-toolbar > button { width: 100%; }
   .task-view-switch { justify-content: flex-start; }
   .task-calendar-grid { gap: 4px; }
   .task-calendar-day { min-height: 68px; padding: 6px; font-size: .85rem; }
