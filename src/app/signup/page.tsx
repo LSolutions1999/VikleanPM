@@ -21,7 +21,7 @@ export default async function SignupPage() {
             </div>
             <div>
               <p className="brand-kicker">Internal use only</p>
-              <h1>Property Manager</h1>
+              <h1>VikleanWork</h1>
             </div>
           </div>
 
@@ -35,7 +35,7 @@ export default async function SignupPage() {
 
           <ul className="hero-bullets">
             <li>Email confirmation is sent by Supabase if enabled.</li>
-            <li>Your account defaults to manager access until an admin changes it.</li>
+            <li>Access is assigned by an administrator based on your role.</li>
             <li>You can update role mappings later without rebuilding the app.</li>
           </ul>
         </div>

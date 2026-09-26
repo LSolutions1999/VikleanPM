@@ -27,7 +27,7 @@ export function AppShell({
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <BrandLogo title="Property Manager" subtitle="VikleanPM" />
+        <BrandLogo title="VikleanWork" subtitle="Property Manager" />
 
         <nav className="nav">
           {navItems.map((item) => (

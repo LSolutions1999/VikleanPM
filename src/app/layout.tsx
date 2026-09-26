@@ -16,8 +16,8 @@ const bodyFont = IBM_Plex_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "VikleanPM",
-  description: "Internal property management platform for staff workflows"
+  title: "VikleanWork | Property Manager",
+  description: "VikleanWork property management workspace"
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

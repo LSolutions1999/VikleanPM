@@ -10,7 +10,7 @@ import type {
 } from "@/lib/types";
 
 export const staff: StaffProfile[] = [
-  { id: "u1", name: "Avery Cole", email: "admin@vikleanpm.local", role: "admin" },
+  { id: "u1", name: "Admin", email: "tyranpro557@gmail.com", role: "admin" },
   { id: "u2", name: "Marta Singh", email: "manager@vikleanpm.local", role: "manager" },
   { id: "u3", name: "Noah Bennett", email: "maintenance@vikleanpm.local", role: "maintenance" }
 ];

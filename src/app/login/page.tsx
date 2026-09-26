@@ -21,12 +21,12 @@ export default async function LoginPage() {
             </div>
             <div>
               <p className="brand-kicker">Internal use only</p>
-              <h1>Property Manager</h1>
+              <h1>VikleanWork</h1>
             </div>
           </div>
 
           <div className="hero-copy">
-            <p className="eyebrow">Property Manager</p>
+            <p className="eyebrow">VikleanWork</p>
             <h1>Keep properties, tenants, documents, and tasks in one fast workspace.</h1>
             <p className="page-description">
               Clean dashboards for non-technical staff, with role-aware access for admins, managers, and maintenance teams.
