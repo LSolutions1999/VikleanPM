@@ -119,43 +119,6 @@ button {
   transform: translateY(-1px);
 }
 
-.header-account {
-  grid-column: 3;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 14px;
-}
-
-.header-user {
-  display: grid;
-  gap: 2px;
-  text-align: right;
-}
-
-.header-user strong {
-  font-size: 0.9rem;
-}
-
-.header-user .session-role {
-  font-size: 0.64rem;
-}
-
-.header-email {
-  overflow: hidden;
-  max-width: 190px;
-  color: var(--muted);
-  font-size: 0.75rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sign-out-button {
-  width: auto;
-  padding: 10px 13px;
-  white-space: nowrap;
-}
-
 .brand {
   display: flex;
   gap: 14px;
@@ -788,10 +751,104 @@ button {
   color: var(--accent-strong);
 }
 
+/* Task workflow modeled on Viklean Work. */
+.task-workspace { display: grid; gap: 16px; }
+.task-tabs, .task-view-switch { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.task-tabs { padding: 6px; width: fit-content; border-radius: 999px; background: rgba(255,255,255,.04); }
+.task-tab { border: 0; border-radius: 999px; padding: 11px 18px; color: var(--muted); background: transparent; font-weight: 650; }
+.task-tab:hover { color: var(--text); background: rgba(255,255,255,.06); }
+.task-tab.active { color: white; background: linear-gradient(135deg,var(--accent),var(--accent-strong)); }
+.task-tab-panel { min-width: 0; }
+.task-view-switch { justify-content: flex-end; }
+.task-view-switch .toggle { background: rgba(255,255,255,.05); }
+.task-view-switch .toggle.active { background: linear-gradient(135deg,var(--accent),var(--accent-strong)); }
+.task-list-view { display: grid; gap: 16px; min-width: 0; }
+.task-toolbar { display: grid; grid-template-columns: minmax(200px,1fr) minmax(190px,260px); gap: 14px; align-items: end; }
+.task-sort-field select { width: 100%; border: 1px solid rgba(255,255,255,.08); color: var(--text); background: #292d32; border-radius: 16px; padding: 13px 14px; }
+.task-table-wrap { overflow-x: auto; border: 1px solid var(--panel-border); border-radius: 14px; }
+.task-table { display: grid; grid-template-columns: minmax(210px,2fr) minmax(120px,1fr) minmax(100px,.8fr) minmax(130px,1fr) 76px; align-items: center; gap: 14px; min-width: 760px; }
+.task-table-head { padding: 12px 16px; color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; background: rgba(255,255,255,.035); }
+.task-table-row { width: 100%; border: 0; border-top: 1px solid rgba(255,255,255,.07); padding: 13px 16px; color: var(--text); text-align: left; background: transparent; }
+.task-table-row:hover { background: rgba(255,49,49,.07); }
+.task-row-title { display: grid; gap: 4px; }
+.task-row-title small, .calendar-task-item small { color: var(--muted); }
+.task-progress-icon { display: flex; justify-content: center; color: var(--accent-strong); }
+.task-empty { padding: 28px 16px; border: 1px dashed rgba(255,255,255,.14); border-radius: 14px; color: var(--muted); text-align: center; }
+.priority-label { display: inline-flex; width: fit-content; align-items: center; border-radius: 999px; padding: 6px 10px; font-size: .78rem; font-weight: 650; }
+.priority-level-1 { color: #ffc5c5; background: rgba(255,49,49,.24); }
+.priority-level-2 { color: #ffd2b7; background: rgba(255,107,61,.18); }
+.priority-level-3 { color: #ffe1ad; background: rgba(255,188,61,.16); }
+.priority-level-4, .priority-level-5, .priority-optional { color: var(--muted); background: rgba(255,255,255,.08); }
+.task-submit-panel { max-width: 1000px; width: 100%; margin-inline: auto; }
+.task-submit-panel > div:first-child h3 { margin-top: 4px; }
+.task-submit-form, .task-edit-form { display: grid; gap: 16px; }
+.task-submit-actions { display: flex; justify-content: flex-end; }
+.task-open-deadline { display: flex; align-items: center; gap: 9px; color: var(--muted); }
+.task-open-deadline input { accent-color: var(--accent); }
+.task-calendar { padding: 0; border: 0; box-shadow: none; background: transparent; }
+.task-calendar-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.calendar-controls { display: flex; gap: 8px; }
+.task-calendar-grid { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 8px; }
+.task-calendar-weekday { padding: 8px 4px; color: var(--muted); text-align: center; font-size: .82rem; }
+.task-calendar-day { min-height: 92px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 10px; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; color: var(--text); background: rgba(255,255,255,.035); text-align: left; }
+.task-calendar-day:hover, .task-calendar-day.has-tasks { border-color: rgba(255,107,107,.45); background: rgba(255,49,49,.08); }
+.task-calendar-day.today > span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); }
+.task-calendar-day.out-of-month { opacity: .4; }
+.task-calendar-day strong { color: var(--accent-strong); font-size: .75rem; }
+.task-modal { width: min(760px,100%); }
+.task-modal-content { display: grid; gap: 16px; }
+.task-review-list { display: grid; gap: 10px; margin: 0; }
+.task-review-list > div { display: grid; grid-template-columns: minmax(115px,.7fr) minmax(0,1.5fr); gap: 12px; padding: 11px 13px; border-radius: 12px; background: rgba(255,255,255,.04); }
+.task-review-list dt, .task-review-list > div > span:first-child { color: var(--muted); }
+.task-review-list dd { margin: 0; overflow-wrap: anywhere; }
+.task-detail-topline { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.task-detail-description { margin: 0; line-height: 1.6; white-space: pre-wrap; }
+.task-detail-list { display: grid; gap: 8px; }
+.task-detail-list .detail-row { align-items: start; }
+.task-detail-list .detail-row span { text-align: right; overflow-wrap: anywhere; }
+.task-cancellation-note { padding: 14px; border-radius: 14px; background: rgba(255,79,79,.1); }
+.task-cancellation-note p { margin: 8px 0; }
+.task-cancellation-note > span, .task-existing-notes article > span { color: var(--muted); font-size: .84rem; }
+.task-attachment-list { margin: 0; padding-left: 20px; }
+.task-existing-notes { display: grid; gap: 8px; }
+.task-existing-notes article { padding: 12px; border-radius: 12px; background: rgba(255,255,255,.04); }
+.task-existing-notes article p { margin: 6px 0 0; }
+.task-more-details { padding: 12px; border-radius: 12px; background: rgba(255,255,255,.04); color: var(--muted); }
+.task-more-details summary { color: var(--text); cursor: pointer; }
+.task-status-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08); }
+.task-status-actions > span { width: 100%; color: var(--muted); font-size: .86rem; }
+.task-status-actions .ghost-button { width: auto; }
+.task-modal-actions { flex-wrap: wrap; gap: 8px; }
+.task-status-log { display: grid; gap: 12px; padding-left: 22px; }
+.task-status-log li { padding-left: 4px; }
+.task-status-log li span { display: block; margin-top: 4px; color: var(--muted); font-size: .84rem; }
+.calendar-task-list { display: grid; gap: 8px; }
+.calendar-task-item { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(80px,.4fr); align-items: center; gap: 12px; padding: 12px; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; color: var(--text); background: rgba(255,255,255,.035); text-align: left; }
+.calendar-task-item > span:first-child { display: grid; gap: 5px; }
+.calendar-task-item:hover { border-color: rgba(255,107,107,.45); }
+.danger-button { color: #ffb7b7; }
+.danger-action { background: linear-gradient(135deg,#b92727,#ff4f4f); }
+
 .detail-grid {
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.account-profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.account-profile-header h3 {
+  margin: 0;
+}
+
+.account-sign-out {
+  width: auto;
+  white-space: nowrap;
 }
 
 .detail-card {
@@ -1007,10 +1064,6 @@ button {
     padding-inline: 20px;
   }
 
-  .header-email {
-    max-width: 140px;
-  }
-
   .toolbar,
   .stat-grid,
   .property-grid {
@@ -1068,35 +1121,6 @@ button {
     padding: 9px 12px;
   }
 
-  .header-account {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    gap: 0;
-  }
-
-  .header-user strong {
-    max-width: 90px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .header-user .session-role,
-  .header-email {
-    display: none;
-  }
-
-  .sign-out-button {
-    padding: 9px 7px;
-    font-size: 0;
-  }
-
-  .sign-out-button svg {
-    width: 18px;
-    height: 18px;
-  }
-
   .toolbar,
   .stat-grid,
   .property-grid,
@@ -1145,4 +1169,16 @@ button {
   .auth-panel {
     padding: 24px;
   }
+
+  .task-toolbar { grid-template-columns: 1fr; }
+  .task-view-switch { justify-content: flex-start; }
+  .task-calendar-grid { gap: 4px; }
+  .task-calendar-day { min-height: 68px; padding: 6px; font-size: .85rem; }
+  .task-calendar-day strong { font-size: .66rem; }
+  .task-review-list > div { grid-template-columns: 1fr; gap: 5px; }
+  .task-detail-topline { align-items: flex-start; flex-direction: column; }
+  .calendar-task-item { grid-template-columns: minmax(0,1fr) auto; }
+  .calendar-task-item > span:last-child { grid-column: 1 / -1; }
+  .task-tabs { width: 100%; }
+  .task-tab { flex: 1; padding-inline: 10px; }
 }

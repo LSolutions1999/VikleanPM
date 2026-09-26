@@ -88,7 +88,7 @@ const tasks: Task[] = [
     title: "Replace hallway light fixture",
     description: "Hallway on 2nd floor is flickering in the north stairwell.",
     dueDate: "2026-07-08",
-    priority: "High",
+    priority: 2,
     status: "Pending",
     propertyId: "p1",
     unitId: undefined,
@@ -102,7 +102,7 @@ const tasks: Task[] = [
     title: "Inspect Unit 3A for move-out",
     description: "Walk-through required before end of lease.",
     dueDate: "2026-07-10",
-    priority: "Medium",
+    priority: 3,
     status: "In Progress",
     propertyId: "p2",
     unitId: "p2-u3",
@@ -116,7 +116,7 @@ const tasks: Task[] = [
     title: "Archive roof inspection notes",
     description: "Upload signed report and mark complete once filed.",
     dueDate: "2026-07-03",
-    priority: "Low",
+    priority: 4,
     status: "Completed",
     propertyId: "p3",
     assignedTo: "Avery Cole",
@@ -276,7 +276,7 @@ export const properties: Property[] = propertiesBase.map((property) => {
 });
 
 export const taskStatuses: TaskStatus[] = ["Pending", "In Progress", "Completed"];
-export const taskPriorities: TaskPriority[] = ["Low", "Medium", "High"];
+export const taskPriorities: TaskPriority[] = [1, 2, 3, 4, 5];
 export const documentCategories = ["Inspections", "Repairs", "Maintenance"] as const;
 
 export function getPropertyById(id: string) {

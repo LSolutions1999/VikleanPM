@@ -3,8 +3,9 @@ export type UserRole = "admin" | "manager" | "maintenance";
 export type PropertyStatus = "Active" | "Needs review" | "Vacant";
 export type UnitStatus = "Occupied" | "Vacant" | "Maintenance";
 export type DocumentCategory = "Inspections" | "Repairs" | "Maintenance";
-export type TaskStatus = "Pending" | "In Progress" | "Completed";
-export type TaskPriority = "Low" | "Medium" | "High";
+export type TaskStatus = "Pending" | "In Progress" | "Completed" | "Cancelled";
+export type TaskPriority = 1 | 2 | 3 | 4 | 5;
+export type TaskProgressStatus = "To Do" | "In Progress" | "On Hold";
 export type PaymentStatus = "Paid" | "Unpaid" | "Partial";
 
 export type StaffProfile = {
@@ -76,7 +77,7 @@ export type Task = {
   title: string;
   description: string;
   dueDate: string;
-  priority: TaskPriority;
+  priority: TaskPriority | null;
   status: TaskStatus;
   propertyId: string;
   unitId?: string;
@@ -84,6 +85,13 @@ export type Task = {
   createdAt: string;
   notes: TaskUpdate[];
   attachments: TaskAttachment[];
+  tools?: string;
+  createdBy?: string;
+  progressStatus?: TaskProgressStatus;
+  statusLog?: { user: string; status: TaskProgressStatus; timestamp: string }[];
+  seenBy?: string[];
+  completionDate?: string;
+  cancellationDetails?: { reason: string; cancelledBy: string; timestamp: string };
 };
 
 export type SessionContext = {

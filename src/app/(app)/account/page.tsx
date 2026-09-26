@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
-import { StatGrid } from "@/components/StatGrid";
+import { LogOut } from "lucide-react";
+import { signOutAction } from "@/app/actions";
 import { requireSession } from "@/lib/session";
 
 export default async function AccountPage() {
@@ -13,14 +14,34 @@ export default async function AccountPage() {
         description="Review your role, permissions, and the parts of the platform that are visible to you."
       />
 
-      <StatGrid
-        items={[
-          { label: "Name", value: session.name, hint: "Current signed-in profile" },
-          { label: "Role", value: session.role, hint: "Access control level" },
-          { label: "Email", value: session.email, hint: "Sign-in identifier" },
-          { label: "Visibility", value: session.role === "admin" ? "All data" : "Scoped data", hint: "Role-aware filtering" }
-        ]}
-      />
+      <section className="panel">
+        <div className="account-profile-header">
+          <div>
+            <p className="eyebrow">Signed-in user</p>
+            <h3>{session.name}</h3>
+          </div>
+          <form action={signOutAction}>
+            <button className="ghost-button account-sign-out" type="submit">
+              <LogOut size={16} />
+              Sign out
+            </button>
+          </form>
+        </div>
+        <div className="detail-list">
+          <div className="detail-row">
+            <strong>Email</strong>
+            <span>{session.email}</span>
+          </div>
+          <div className="detail-row">
+            <strong>Role</strong>
+            <span>{session.role}</span>
+          </div>
+          <div className="detail-row">
+            <strong>Visibility</strong>
+            <span>{session.role === "admin" ? "All data" : "Scoped data"}</span>
+          </div>
+        </div>
+      </section>
 
       <section className="panel">
         <p className="eyebrow">Permissions</p>
