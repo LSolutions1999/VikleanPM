@@ -137,40 +137,6 @@ type PropertySeed = {
   units: Unit[];
 };
 
-function buildUnits(
-  propertyId: string,
-  unitNumbers: number[],
-  options?: {
-    occupied?: number[];
-    maintenance?: number[];
-    tenantNotes?: Record<number, string>;
-  }
-) {
-  const occupied = new Set(options?.occupied ?? []);
-  const maintenance = new Set(options?.maintenance ?? []);
-  const tenantNotes = options?.tenantNotes ?? {};
-
-  return unitNumbers.map((number) => {
-    const isOccupied = occupied.has(number);
-    const isMaintenance = maintenance.has(number);
-    const status: Unit["status"] = isMaintenance ? "Maintenance" : isOccupied ? "Occupied" : "Vacant";
-
-    return {
-      id: `${propertyId}-u${number}`,
-      propertyId,
-      number: String(number),
-      status,
-      notes:
-        tenantNotes[number] ??
-        (status === "Occupied"
-          ? "Occupied unit."
-          : status === "Maintenance"
-            ? "Scheduled for maintenance review."
-            : "Available for lease.")
-    } as Unit;
-  });
-}
-
 const propertiesBase: PropertySeed[] = [
   {
     id: "p1",
@@ -180,19 +146,7 @@ const propertiesBase: PropertySeed[] = [
     region: "SK",
     status: "Active",
     notes: "Mixed complex spanning two street addresses.",
-    units: buildUnits(
-      "p1",
-      [10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 23, 24, 25, 26, 27, 28, 30, 31, 32, 33, 34, 35, 36, 37, 38],
-      {
-        occupied: [10, 12],
-        maintenance: [24],
-        tenantNotes: {
-          10: "Occupied by Jordan Lee.",
-          12: "Occupied by Priya Patel.",
-          24: "Inspection scheduled."
-        }
-      }
-    )
+    units: []
   },
   {
     id: "p2",
@@ -202,18 +156,7 @@ const propertiesBase: PropertySeed[] = [
     region: "SK",
     status: "Needs review",
     notes: "Building under review after recent maintenance activity.",
-    units: buildUnits(
-      "p2",
-      [1, 2, 3, 4, 5, 6, 7, 8, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38],
-      {
-        occupied: [2],
-        maintenance: [3],
-        tenantNotes: {
-          2: "Occupied by Asha Morgan.",
-          3: "Repairs in progress."
-        }
-      }
-    )
+    units: []
   },
   {
     id: "p3",
@@ -223,13 +166,7 @@ const propertiesBase: PropertySeed[] = [
     region: "SK",
     status: "Active",
     notes: "Secondary Bison Street building.",
-    units: buildUnits("p3", [1, 2, 3, 4, 5, 6, 7, 8], {
-      occupied: [1, 2],
-      tenantNotes: {
-        1: "Occupied unit.",
-        2: "Occupied unit."
-      }
-    })
+    units: []
   },
   {
     id: "p4",
@@ -239,7 +176,7 @@ const propertiesBase: PropertySeed[] = [
     region: "SK",
     status: "Active",
     notes: "Mid-size building with a straightforward unit layout.",
-    units: buildUnits("p4", [1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 13, 14, 15, 16, 17, 18])
+    units: []
   },
   {
     id: "p5",
@@ -249,7 +186,7 @@ const propertiesBase: PropertySeed[] = [
     region: "SK",
     status: "Needs review",
     notes: "Larger building with numbered upper-floor units.",
-    units: buildUnits("p5", [101, 102, 103, 104, 105, 106, 107, 108, 209, 210, 211, 212, 213, 214, 215, 216])
+    units: []
   },
   {
     id: "p6",
@@ -259,7 +196,7 @@ const propertiesBase: PropertySeed[] = [
     region: "SK",
     status: "Vacant",
     notes: "Large footprint with mostly open availability.",
-    units: buildUnits("p6", Array.from({ length: 36 }, (_, index) => index + 1))
+    units: []
   }
 ];
 
