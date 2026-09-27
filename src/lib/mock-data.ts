@@ -3,7 +3,6 @@ import type {
   Property,
   StaffProfile,
   Task,
-  TaskPriority,
   TaskStatus,
   Unit,
   Tenant
@@ -171,7 +170,6 @@ export const properties: Property[] = propertiesBase.map((property) => {
 });
 
 export const taskStatuses: TaskStatus[] = ["Pending", "In Progress", "Completed"];
-export const taskPriorities: TaskPriority[] = [1, 2, 3, 4, 5];
 export const documentCategories = ["Inspections", "Repairs", "Maintenance"] as const;
 
 export function getPropertyById(id: string) {
@@ -183,16 +181,7 @@ export function getTaskById(id: string) {
 }
 
 export function getVisibleProperties(role: string) {
-  if (role === "admin") {
-    return properties;
-  }
-
-  if (role === "maintenance") {
-    return properties.filter((property) =>
-      tasks.some((task) => task.propertyId === property.id && task.assignedTo === "Noah Bennett")
-    );
-  }
-
+  void role;
   return properties;
 }
 
