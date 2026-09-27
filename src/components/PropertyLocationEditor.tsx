@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Property } from "@/lib/types";
 
@@ -21,6 +22,7 @@ export function PropertyLocationEditor({ property, propertySlug }: PropertyLocat
     notes: property.notes
   });
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,6 +77,7 @@ export function PropertyLocationEditor({ property, propertySlug }: PropertyLocat
     }
 
     setSavedAt(new Date().toLocaleString());
+    setEditing(false);
     window.location.reload();
   }
 
@@ -85,16 +88,13 @@ export function PropertyLocationEditor({ property, propertySlug }: PropertyLocat
           <p className="eyebrow">Location</p>
           <h3>Site information</h3>
         </div>
-        <p className="form-message">{savedAt ? `Saved locally ${savedAt}` : "Edit the location details below."}</p>
-      </div>
-
-      <div className="detail-list">
-        <div className="detail-row">
-          <strong>Total units</strong>
-          <span>{property.units.length}</span>
+        <div className="property-location-actions">
+          {savedAt ? <p className="form-message">Saved {savedAt}</p> : null}
+          {editing ? <button type="button" className="ghost-button" onClick={() => { setDraft({ name: property.name, address: property.address, city: property.city, region: property.region, notes: property.notes }); setEditing(false); }}>Cancel</button> : <button type="button" className="ghost-button" onClick={() => setEditing(true)}><Pencil size={16} /> Edit</button>}
         </div>
       </div>
 
+      {editing ? (
       <div className="modal-section">
         <div className="form-grid">
           <label className="full">
@@ -127,6 +127,7 @@ export function PropertyLocationEditor({ property, propertySlug }: PropertyLocat
           </button>
         </div>
       </div>
+      ) : null}
     </article>
   );
 }

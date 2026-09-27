@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   CalendarDays,
   CheckSquare,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock3,
@@ -484,7 +485,7 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
             </form>
           ) : (
             <>
-              <div className="task-detail-topline task-status-seen"><strong>Status</strong><span className={`status-pill status-${selectedTask.status.toLowerCase()}`}>{selectedTask.status}</span><button type="button" className="ghost-button" onClick={() => markSeen(selectedTask)} disabled={selectedTask.seenBy?.includes(session.name)}><Eye size={16} />{selectedTask.seenBy?.includes(session.name) ? "Seen" : "Mark as Seen"}</button></div>
+              <div className="task-detail-topline task-status-seen"><strong>Status</strong><details className="task-progress-dropdown"><summary className={`status-pill status-${(selectedTask.progressStatus ?? "To Do").toLowerCase().replaceAll(" ", "-")}`}>{selectedTask.progressStatus ?? "To Do"}<ChevronDown size={14} /></summary><div className="task-progress-menu">{(["To Do", "In Progress", "On Hold"] as TaskProgressStatus[]).map((status) => <button key={status} type="button" className={selectedTask.progressStatus === status ? "active" : ""} onClick={(event) => { void setProgressStatus(selectedTask, status); event.currentTarget.closest("details")?.removeAttribute("open"); }}>{status}</button>)}</div></details><button type="button" className="ghost-button" onClick={() => markSeen(selectedTask)} disabled={selectedTask.seenBy?.includes(session.name)}><Eye size={16} />{selectedTask.seenBy?.includes(session.name) ? "Seen" : "Mark as Seen"}</button></div>
               <p className="task-detail-description">{selectedTask.description}</p>
               <div className="detail-list task-detail-list">
                 <div className="detail-row"><strong>Deadline</strong><span>{formatTaskDate(selectedTask.dueDate)}</span></div>
@@ -494,12 +495,7 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
               {selectedTask.completionDate ? <p className="muted">Completed {formatTaskDate(selectedTask.completionDate)}</p> : null}
               {selectedTask.attachments.length ? <div><p className="eyebrow">Attachments</p><ul className="task-attachment-list">{selectedTask.attachments.map((attachment) => <li key={attachment.id}>{attachment.fileName}</li>)}</ul></div> : null}
               {selectedTask.notes.length ? <div className="task-existing-notes"><p className="eyebrow">Notes</p>{selectedTask.notes.map((note) => <article key={note.id}><span>{formatTaskDate(note.createdAt)}</span><p>{note.note}</p></article>)}</div> : null}
-              <details className="task-more-details"><summary>More Details</summary><p>Progress: {selectedTask.progressStatus ?? "To Do"}</p><div className="detail-list task-detail-list"><div className="detail-row"><strong>Submitted</strong><span>{formatTaskDate(selectedTask.createdAt)}</span></div><div className="detail-row"><strong>Issuer</strong><span>{selectedTask.createdBy ?? "Staff"}</span></div><div className="detail-row"><strong>Seen by</strong><span>{selectedTask.seenBy?.length ? selectedTask.seenBy.join(", ") : "No one yet"}</span></div></div></details>
-              <div className="task-status-actions">
-                <span>Update status</span>
-                {(["To Do", "In Progress", "On Hold"] as TaskProgressStatus[]).map((status) => <button key={status} type="button" className={selectedTask.progressStatus === status ? "toggle active" : "toggle"} onClick={() => setProgressStatus(selectedTask, status)}>{status}</button>)}
-                <button className="ghost-button" type="button" onClick={() => { setLogTaskId(selectedTask.id); setSelectedTaskId(null); }}>Status Log</button>
-              </div>
+              <details className="task-more-details"><summary>More Details</summary><div className="detail-list task-detail-list"><div className="detail-row"><strong>Submitted</strong><span>{formatTaskDate(selectedTask.createdAt)}</span></div><div className="detail-row"><strong>Issuer</strong><span>{selectedTask.createdBy ?? "Staff"}</span></div><div className="detail-row"><strong>Seen by</strong><span>{selectedTask.seenBy?.length ? selectedTask.seenBy.join(", ") : "No one yet"}</span></div></div><button className="ghost-button" type="button" onClick={() => { setLogTaskId(selectedTask.id); setSelectedTaskId(null); }}>Status Log</button></details>
               <div className="modal-actions task-modal-actions">
                 {selectedTask.status !== "Completed" && selectedTask.status !== "Cancelled" ? <button type="button" className="primary-button" onClick={() => setCompletingTaskId(selectedTask.id)}>Complete Task</button> : null}
                 {(isAdmin || selectedTask.createdBy === session.name) && selectedTask.status === "Pending" ? <button type="button" className="ghost-button" onClick={() => { setEditDraft({ ...selectedTask }); setEditing(true); }}><Pencil size={16} /> Edit Task</button> : null}

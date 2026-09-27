@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Property, Unit } from "@/lib/types";
 import { formatDate } from "@/lib/format";
@@ -33,6 +33,7 @@ type NewUnitDraft = {
 export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
   const supabase = createClient();
   const [units, setUnits] = useState(property.units);
+  const [unitSearch, setUnitSearch] = useState("");
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
   const [isAddingUnit, setIsAddingUnit] = useState(false);
   const [tenantView, setTenantView] = useState<"summary" | "contact" | "lease">("summary");
@@ -97,6 +98,16 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
   const activeUnit = selectedUnit && activeDraft ? { ...selectedUnit, ...activeDraft } : selectedUnit;
   const tenant = activeUnit ? getUnitTenant(property, activeUnit) : null;
   const activeTenantDraft = selectedUnit ? tenantDrafts[selectedUnit.id] ?? null : null;
+  const filteredUnits = units.filter((unit) => {
+    const query = unitSearch.trim().toLowerCase();
+    if (!query) return true;
+    const tenant = getUnitTenant(property, unit);
+    return [unit.number, unit.status, unit.notes, tenant?.name]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+      .includes(query);
+  });
 
   function toDatabaseUnitStatus(status: Unit["status"]) {
     if (status === "Occupied") {
@@ -356,6 +367,10 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
             {isAddingUnit ? "Close add form" : "Add unit"}
           </button>
         </div>
+        <label className="search-field unit-search-field">
+          <span>Search units</span>
+          <div className="input-with-icon"><Search size={16} /><input value={unitSearch} onChange={(event) => setUnitSearch(event.target.value)} placeholder="Unit number, status, or tenant" /></div>
+        </label>
         {isAddingUnit ? (
           <div className="modal-section">
             <p className="eyebrow">Add unit</p>
@@ -393,7 +408,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
           </div>
         ) : null}
         <div className="unit-grid">
-          {units.map((unit) => (
+          {filteredUnits.map((unit) => (
             <button key={unit.id} type="button" className="unit-card" onClick={() => setSelectedUnit(unit)}>
               {(() => {
                 const unitTenant = getUnitTenant(property, unit);
@@ -411,6 +426,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
             </button>
           ))}
         </div>
+        {filteredUnits.length === 0 ? <p className="muted">{units.length ? "No units match your search." : "No units have been added yet."}</p> : null}
       </section>
 
       {selectedUnit ? (
