@@ -31,11 +31,17 @@ type UnitRecord = {
   source_unit_id: string | null;
   property_id: string;
   unit_number: string;
+  unit_type: string | null;
   address: string | null;
   bedrooms: number | null;
   bathrooms: number | null;
   square_feet: number | null;
   rent_amount: number | null;
+  lease_term: "Standard" | "Monthly" | null;
+  lease_start: string | null;
+  lease_end: string | null;
+  rent_due_day: number | null;
+  utilities: string[] | null;
   status: string;
   notes: string | null;
 };
@@ -82,12 +88,12 @@ function propertyFromRecord(record: PropertyRecord): Property {
 }
 
 function hydrateTenants(baseProperty: Property, rows: TenantRecord[]) {
-  const tenantsByUnitId = new Map(baseProperty.tenants.map((tenant) => [tenant.unitId, tenant]));
+  const propertyRows = rows.filter((tenant) => tenant.property_slug === baseProperty.id);
+  const databaseUnitIds = new Set(propertyRows.map((tenant) => tenant.unit_id));
+  const tenantsById = new Map(baseProperty.tenants.filter((tenant) => !databaseUnitIds.has(tenant.unitId)).map((tenant) => [tenant.id, tenant]));
 
-  rows
-    .filter((tenant) => tenant.property_slug === baseProperty.id)
-    .forEach((tenant) => {
-      tenantsByUnitId.set(tenant.unit_id, {
+  propertyRows.forEach((tenant) => {
+    tenantsById.set(tenant.id, {
         id: tenant.id,
         propertyId: tenant.property_slug,
         unitId: tenant.unit_id,
@@ -97,10 +103,10 @@ function hydrateTenants(baseProperty: Property, rows: TenantRecord[]) {
         leaseStart: tenant.lease_start ?? "",
         leaseEnd: tenant.lease_end ?? "",
         leaseFileName: tenant.lease_file_name ?? ""
-      });
     });
+  });
 
-  return Array.from(tenantsByUnitId.values());
+  return Array.from(tenantsById.values());
 }
 
 function hydrateUnits(baseProperty: Property, rows: UnitRecord[]) {
@@ -114,8 +120,15 @@ function hydrateUnits(baseProperty: Property, rows: UnitRecord[]) {
         id: sourceId,
         propertyId: baseProperty.id,
         number: unit.unit_number,
+        type: unit.unit_type ?? (unit.bedrooms !== null && unit.bathrooms !== null ? `${unit.bedrooms} Bed ${unit.bathrooms} Bath` : ""),
         status: toDisplayUnitStatus(unit.status),
         notes: unit.notes ?? "",
+        leaseTerm: unit.lease_term ?? "Standard",
+        leaseStart: unit.lease_start ?? "",
+        leaseEnd: unit.lease_end ?? "",
+        rentAmount: unit.rent_amount,
+        rentDueDay: unit.rent_due_day,
+        utilities: unit.utilities ?? ["Water"],
         tenantId: baseProperty.tenants.find((tenant) => tenant.unitId === sourceId)?.id
       });
     });
@@ -161,7 +174,7 @@ export async function getPropertyForDisplay(slug: string) {
     .eq("property_slug", slug);
   const { data: unitData } = await supabase
     .from("units")
-    .select("source_unit_id, property_id, unit_number, address, bedrooms, bathrooms, square_feet, rent_amount, status, notes")
+    .select("source_unit_id, property_id, unit_number, unit_type, address, bedrooms, bathrooms, square_feet, rent_amount, lease_term, lease_start, lease_end, rent_due_day, utilities, status, notes")
     .eq("property_id", slug);
 
   if (data && !error) {
@@ -197,7 +210,7 @@ export async function getVisiblePropertiesForDisplay(role: string) {
     .in("property_slug", slugs);
   const { data: unitData } = await supabase
     .from("units")
-    .select("source_unit_id, property_id, unit_number, address, bedrooms, bathrooms, square_feet, rent_amount, status, notes")
+    .select("source_unit_id, property_id, unit_number, unit_type, address, bedrooms, bathrooms, square_feet, rent_amount, lease_term, lease_start, lease_end, rent_due_day, utilities, status, notes")
     .in("property_id", slugs);
 
   return hydrateFromSupabase(

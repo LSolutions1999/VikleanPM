@@ -2,6 +2,7 @@ export type UserRole = "admin" | "manager" | "maintenance";
 
 export type PropertyStatus = "Active" | "Needs review" | "Vacant";
 export type UnitStatus = "Occupied" | "Vacant" | "Maintenance";
+export type LeaseTerm = "Standard" | "Monthly";
 export type DocumentCategory = "Inspections" | "Repairs" | "Maintenance";
 export type TaskStatus = "Pending" | "In Progress" | "Completed" | "Cancelled";
 export type TaskProgressStatus = "To Do" | "In Progress" | "On Hold";
@@ -34,6 +35,13 @@ export type Unit = {
   number: string;
   status: UnitStatus;
   notes: string;
+  type?: string;
+  leaseTerm?: LeaseTerm;
+  leaseStart?: string;
+  leaseEnd?: string;
+  rentAmount?: number | null;
+  rentDueDay?: number | null;
+  utilities?: string[];
   tenantId?: string;
 };
 
