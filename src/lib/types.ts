@@ -21,6 +21,7 @@ export type Property = {
   city: string;
   region: string;
   status: PropertyStatus;
+  propertyOwner?: string;
   units: Unit[];
   documents: DocumentRecord[];
   tenants: Tenant[];

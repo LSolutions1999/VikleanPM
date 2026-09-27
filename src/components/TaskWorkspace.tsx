@@ -343,7 +343,6 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
             );
           })}
         </div>
-        {sourceTasks.some((task) => !task.dueDate && !archived) ? <p className="muted">Tasks with an open deadline are not placed on the calendar.</p> : null}
       </section>
     );
   }

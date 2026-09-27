@@ -425,6 +425,9 @@ button {
   transition: transform 160ms ease, border-color 160ms ease;
 }
 
+.property-card-link { display: grid; gap: 18px; color: inherit; }
+.property-card-edit { width: fit-content; }
+
 .property-card:hover {
   transform: translateY(-2px);
   border-color: rgba(255, 107, 107, 0.4);
@@ -976,7 +979,13 @@ button {
 
 .property-location-actions { display: flex; align-items: center; gap: 8px; }
 .property-location-actions .form-message { margin: 0; }
-.unit-search-field { max-width: 520px; margin-bottom: 18px; }
+.unit-search-controls { display: flex; align-items: end; gap: 12px; margin-bottom: 18px; }
+.unit-search-field { flex: 1; max-width: 520px; margin: 0; }
+.unit-edit-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.unit-edit-hint { display: inline-block; margin-left: 8px; color: var(--accent-strong); font-size: .72rem; font-weight: 600; }
+.tenant-info-actions { display: flex; align-items: end; gap: 8px; }
+.unit-delete-confirm { padding: 12px; border: 1px solid rgba(255,79,79,.32); border-radius: 12px; background: rgba(255,79,79,.08); }
+.unit-delete-confirm p { margin: 0; }
 
 .modal-select {
   min-width: 180px;

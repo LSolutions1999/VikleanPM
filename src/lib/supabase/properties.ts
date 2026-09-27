@@ -9,6 +9,7 @@ type PropertyRecord = {
   city: string | null;
   region: string | null;
   status: Property["status"];
+  property_owner: string | null;
   notes: string | null;
   owner_id: string;
 };
@@ -58,6 +59,7 @@ function mergePropertyRecord(base: Property, record: Partial<PropertyRecord>): P
     address: record.address ?? base.address,
     city: record.city ?? base.city,
     region: record.region ?? base.region,
+    propertyOwner: record.property_owner ?? base.propertyOwner ?? "",
     status: record.status ?? base.status,
     notes: record.notes ?? base.notes
   };
@@ -70,6 +72,7 @@ function propertyFromRecord(record: PropertyRecord): Property {
     address: record.address ?? "",
     city: record.city ?? "",
     region: record.region ?? "",
+    propertyOwner: record.property_owner ?? "",
     status: record.status,
     units: [],
     documents: [],
@@ -149,7 +152,7 @@ export async function getPropertyForDisplay(slug: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("properties")
-    .select("slug, name, address, city, region, status, notes, owner_id")
+    .select("slug, name, address, city, region, property_owner, status, notes, owner_id")
     .eq("slug", slug)
     .maybeSingle();
   const { data: tenantData } = await supabase
@@ -180,7 +183,7 @@ export async function getVisiblePropertiesForDisplay(role: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("properties")
-    .select("slug, name, address, city, region, status, notes, owner_id");
+    .select("slug, name, address, city, region, property_owner, status, notes, owner_id");
 
   if (!data || error) {
     return baseProperties;

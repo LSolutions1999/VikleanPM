@@ -8,21 +8,23 @@ import type { Property } from "@/lib/types";
 type PropertyLocationEditorProps = {
   property: Property;
   propertySlug: string;
+  initialEditing?: boolean;
 };
 
-type PropertyDraft = Pick<Property, "name" | "address" | "city" | "region" | "notes">;
+type PropertyDraft = Pick<Property, "name" | "address" | "city" | "region" | "notes"> & { propertyOwner: string };
 
-export function PropertyLocationEditor({ property, propertySlug }: PropertyLocationEditorProps) {
+export function PropertyLocationEditor({ property, propertySlug, initialEditing = false }: PropertyLocationEditorProps) {
   const supabase = createClient();
   const [draft, setDraft] = useState<PropertyDraft>({
     name: property.name,
     address: property.address,
     city: property.city,
     region: property.region,
+    propertyOwner: property.propertyOwner ?? "",
     notes: property.notes
   });
   const [savedAt, setSavedAt] = useState<string | null>(null);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(initialEditing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,10 +34,12 @@ export function PropertyLocationEditor({ property, propertySlug }: PropertyLocat
       address: property.address,
       city: property.city,
       region: property.region,
+      propertyOwner: property.propertyOwner ?? "",
       notes: property.notes
     });
     setSavedAt(null);
-  }, [property]);
+    setEditing(initialEditing);
+  }, [property, initialEditing]);
 
   function updateField<K extends keyof PropertyDraft>(field: K, value: PropertyDraft[K]) {
     setDraft((current) => ({
@@ -58,11 +62,13 @@ export function PropertyLocationEditor({ property, propertySlug }: PropertyLocat
       return;
     }
 
+    const { propertyOwner, ...locationFields } = draft;
     const { error: saveError } = await supabase.from("properties").upsert(
       {
         slug: propertySlug,
         owner_id: user.id,
-        ...draft
+        ...locationFields,
+        property_owner: propertyOwner.trim() || null
       },
       {
         onConflict: "slug"
@@ -90,7 +96,7 @@ export function PropertyLocationEditor({ property, propertySlug }: PropertyLocat
         </div>
         <div className="property-location-actions">
           {savedAt ? <p className="form-message">Saved {savedAt}</p> : null}
-          {editing ? <button type="button" className="ghost-button" onClick={() => { setDraft({ name: property.name, address: property.address, city: property.city, region: property.region, notes: property.notes }); setEditing(false); }}>Cancel</button> : <button type="button" className="ghost-button" onClick={() => setEditing(true)}><Pencil size={16} /> Edit</button>}
+          {editing ? <button type="button" className="ghost-button" onClick={() => { setDraft({ name: property.name, address: property.address, city: property.city, region: property.region, propertyOwner: property.propertyOwner ?? "", notes: property.notes }); setEditing(false); }}>Cancel</button> : <button type="button" className="ghost-button" onClick={() => setEditing(true)}><Pencil size={16} /> Edit</button>}
         </div>
       </div>
 
@@ -100,6 +106,10 @@ export function PropertyLocationEditor({ property, propertySlug }: PropertyLocat
           <label className="full">
             <span>Property name</span>
             <input value={draft.name} onChange={(event) => updateField("name", event.target.value)} />
+          </label>
+          <label className="full">
+            <span>Property owner</span>
+            <input value={draft.propertyOwner} onChange={(event) => updateField("propertyOwner", event.target.value)} placeholder="Owner name" />
           </label>
           <label className="full">
             <span>Address</span>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, X } from "lucide-react";
+import { Pencil, Search, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Property, Unit } from "@/lib/types";
 import { formatDate } from "@/lib/format";
@@ -35,16 +35,23 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
   const [units, setUnits] = useState(property.units);
   const [unitSearch, setUnitSearch] = useState("");
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
+  const [editingUnits, setEditingUnits] = useState(false);
+  const [unitEditing, setUnitEditing] = useState(false);
+  const [tenantEditing, setTenantEditing] = useState(false);
+  const [confirmDeleteUnit, setConfirmDeleteUnit] = useState(false);
   const [isAddingUnit, setIsAddingUnit] = useState(false);
   const [tenantView, setTenantView] = useState<"summary" | "contact" | "lease">("summary");
   const [drafts, setDrafts] = useState<Record<string, UnitDraft>>({});
   const [tenantDrafts, setTenantDrafts] = useState<Record<string, TenantDraft>>({});
+  const [tenantOverrides, setTenantOverrides] = useState<Record<string, TenantDraft>>({});
   const [newUnitDraft, setNewUnitDraft] = useState<NewUnitDraft>({ number: "", status: "Vacant", notes: "" });
   const [unitSaving, setUnitSaving] = useState(false);
+  const [unitSaved, setUnitSaved] = useState(false);
   const [unitError, setUnitError] = useState<string | null>(null);
   const [addUnitSaving, setAddUnitSaving] = useState(false);
   const [addUnitError, setAddUnitError] = useState<string | null>(null);
   const [tenantSaving, setTenantSaving] = useState(false);
+  const [tenantSaved, setTenantSaved] = useState(false);
   const [tenantError, setTenantError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -56,6 +63,11 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
 
     if (selectedUnit) {
       window.addEventListener("keydown", onKeyDown);
+      setUnitEditing(false);
+      setTenantEditing(false);
+      setConfirmDeleteUnit(false);
+      setUnitSaved(false);
+      setTenantSaved(false);
       setTenantView("summary");
       setDrafts((current) => ({
         ...current,
@@ -96,7 +108,11 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
 
   const activeDraft = selectedUnit ? drafts[selectedUnit.id] ?? null : null;
   const activeUnit = selectedUnit && activeDraft ? { ...selectedUnit, ...activeDraft } : selectedUnit;
-  const tenant = activeUnit ? getUnitTenant(property, activeUnit) : null;
+  const tenant = activeUnit
+    ? tenantOverrides[activeUnit.id]
+      ? { id: `local-${activeUnit.id}`, propertyId: property.id, unitId: activeUnit.id, ...tenantOverrides[activeUnit.id] }
+      : getUnitTenant(property, activeUnit)
+    : null;
   const activeTenantDraft = selectedUnit ? tenantDrafts[selectedUnit.id] ?? null : null;
   const filteredUnits = units.filter((unit) => {
     const query = unitSearch.trim().toLowerCase();
@@ -141,6 +157,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
         notes: field === "notes" ? value : current[selectedUnit.id]?.notes ?? selectedUnit.notes
       }
       }));
+    setUnitSaved(false);
   }
 
   function updateTenantDraft(field: keyof TenantDraft, value: string) {
@@ -161,6 +178,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
           field === "leaseFileName" ? value : current[selectedUnit.id]?.leaseFileName ?? tenant?.leaseFileName ?? ""
       }
     }));
+    setTenantSaved(false);
   }
 
   async function saveUnitChanges() {
@@ -170,6 +188,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
 
     setUnitSaving(true);
     setUnitError(null);
+    setUnitSaved(false);
 
     const {
       data: { user }
@@ -203,7 +222,9 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
       return;
     }
 
-    window.location.reload();
+    const updatedUnit = { ...selectedUnit, ...activeDraft };
+    setUnits((current) => current.map((unit) => unit.id === selectedUnit.id ? updatedUnit : unit));
+    setUnitSaved(true);
   }
 
   async function addUnit() {
@@ -319,6 +340,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
 
     setTenantSaving(true);
     setTenantError(null);
+    setTenantSaved(false);
 
     const {
       data: { user }
@@ -354,23 +376,25 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
       return;
     }
 
-    window.location.reload();
+    setTenantOverrides((current) => ({ ...current, [selectedUnit.id]: activeTenantDraft }));
+    setTenantSaved(true);
+    setTenantView("summary");
   }
 
   return (
     <>
       <section className="panel">
         <p className="eyebrow">Units</p>
-        <div className="modal-section-header">
-          <h3>Tap a unit to view details</h3>
-          <button type="button" className="primary-button" onClick={() => setIsAddingUnit((current) => !current)}>
-            {isAddingUnit ? "Close add form" : "Add unit"}
+        <div className="unit-search-controls">
+          <label className="search-field unit-search-field">
+            <span>Search units</span>
+            <div className="input-with-icon"><Search size={16} /><input value={unitSearch} onChange={(event) => setUnitSearch(event.target.value)} placeholder="Unit number, status, or tenant" /></div>
+          </label>
+          <button type="button" className={editingUnits ? "ghost-button" : "primary-button"} onClick={() => { setEditingUnits((current) => !current); setIsAddingUnit(false); }}>
+            {editingUnits ? "Done" : "Edit"}
           </button>
         </div>
-        <label className="search-field unit-search-field">
-          <span>Search units</span>
-          <div className="input-with-icon"><Search size={16} /><input value={unitSearch} onChange={(event) => setUnitSearch(event.target.value)} placeholder="Unit number, status, or tenant" /></div>
-        </label>
+        {editingUnits ? <div className="unit-edit-toolbar"><span className="muted">Select a unit to edit its details.</span><button type="button" className="ghost-button" onClick={() => setIsAddingUnit((current) => !current)}>{isAddingUnit ? "Close add form" : "Add unit"}</button></div> : null}
         {isAddingUnit ? (
           <div className="modal-section">
             <p className="eyebrow">Add unit</p>
@@ -416,7 +440,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
                 return (
                   <>
               <div className="unit-card-top">
-                <strong>Unit {unit.number}</strong>
+                <strong>Unit {unit.number}{editingUnits ? <small className="unit-edit-hint">Edit</small> : null}</strong>
                 <span className={`status-pill status-${unit.status.toLowerCase()}`}>{unit.status}</span>
               </div>
               <p className="unit-card-note">{unitTenant ? unitTenant.name : "Vacant"}</p>
@@ -443,6 +467,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
                 <p className="eyebrow">Unit details</p>
                 <h3 id="unit-modal-title">Unit {activeUnit?.number ?? selectedUnit.number}</h3>
               </div>
+              <button type="button" className="ghost-button" onClick={() => { if (unitEditing) { setDrafts((current) => ({ ...current, [selectedUnit.id]: { number: selectedUnit.number, status: selectedUnit.status, notes: selectedUnit.notes } })); setUnitEditing(false); setConfirmDeleteUnit(false); } else { setUnitEditing(true); setUnitSaved(false); setConfirmDeleteUnit(false); } }}>{unitEditing ? "Cancel" : <><Pencil size={16} /> Edit</>}</button>
               <button type="button" className="icon-button" onClick={() => setSelectedUnit(null)} aria-label="Close unit details">
                 <X size={18} />
               </button>
@@ -467,10 +492,10 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
                 <strong>Tenant</strong>
                 <span>{tenant?.name ?? "Vacant"}</span>
               </div>
+              {!unitEditing && activeUnit?.notes ? <div className="detail-row"><strong>Notes</strong><span>{activeUnit.notes}</span></div> : null}
             </div>
 
-            <div className="modal-section">
-              <p className="eyebrow">Edit unit info</p>
+            {unitEditing ? <div className="modal-section">
               <div className="form-grid">
                 <label>
                   <span>Unit number</span>
@@ -494,27 +519,21 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
                 </label>
               </div>
               {unitError ? <p className="form-message">{unitError}</p> : null}
-              <div className="modal-actions">
-                <button type="button" className="ghost-button" onClick={deleteUnit} disabled={unitSaving}>
-                  Delete unit
-                </button>
+              {confirmDeleteUnit ? <div className="unit-delete-confirm"><p>Delete this unit? This action cannot be undone.</p><div className="modal-actions"><button type="button" className="ghost-button" onClick={() => setConfirmDeleteUnit(false)} disabled={unitSaving}>Keep unit</button><button type="button" className="primary-button danger-action" onClick={deleteUnit} disabled={unitSaving}>{unitSaving ? "Deleting..." : "Confirm delete"}</button></div></div> : <div className="modal-actions">
                 <button type="button" className="primary-button" onClick={saveUnitChanges} disabled={unitSaving}>
-                  {unitSaving ? "Saving..." : "Save unit"}
+                  {unitSaving ? "Saving..." : unitSaved ? "Saved!" : "Save unit"}
                 </button>
-              </div>
-            </div>
+                <button type="button" className="ghost-button danger-button" onClick={() => setConfirmDeleteUnit(true)} disabled={unitSaving}>Delete unit</button>
+              </div>}
+            </div> : null}
 
             <div className="modal-section">
               <div className="modal-section-header">
                 <p className="eyebrow">Tenant info</p>
-                <label className="select-field modal-select">
-                  <span>View</span>
-                  <select value={tenantView} onChange={(event) => setTenantView(event.target.value as typeof tenantView)}>
-                    <option value="summary">Summary</option>
-                    <option value="contact">Contact</option>
-                    <option value="lease">Lease</option>
-                  </select>
-                </label>
+                <div className="tenant-info-actions">
+                  {!tenantEditing ? <label className="select-field modal-select"><span>View</span><select value={tenantView} onChange={(event) => setTenantView(event.target.value as typeof tenantView)}><option value="summary">Summary</option><option value="contact">Contact</option><option value="lease">Lease</option></select></label> : null}
+                  <button type="button" className="ghost-button" onClick={() => { if (tenantEditing && selectedUnit) { const currentTenant = tenant; setTenantDrafts((current) => ({ ...current, [selectedUnit.id]: currentTenant ? { name: currentTenant.name, phone: currentTenant.phone, email: currentTenant.email, leaseStart: currentTenant.leaseStart, leaseEnd: currentTenant.leaseEnd, leaseFileName: currentTenant.leaseFileName } : { name: "", phone: "", email: "", leaseStart: "", leaseEnd: "", leaseFileName: "" } })); } else { setTenantSaved(false); } setTenantEditing((current) => !current); }}>{tenantEditing ? "Cancel" : tenant ? "Edit" : "Add tenant"}</button>
+                </div>
               </div>
 
               {tenant ? (
@@ -564,8 +583,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
                 <p className="page-description">No tenant assigned to this unit yet.</p>
               )}
 
-              <div className="modal-section">
-                <p className="eyebrow">{tenant ? "Edit tenant info" : "Add tenant info"}</p>
+              {tenantEditing ? <div className="modal-section">
                 <div className="form-grid">
                   <label className="full">
                     <span>Name</span>
@@ -617,10 +635,10 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
 
                 <div className="modal-actions">
                   <button type="button" className="primary-button" onClick={saveTenantChanges} disabled={tenantSaving}>
-                    {tenantSaving ? "Saving..." : "Save tenant info"}
+                    {tenantSaving ? "Saving..." : tenantSaved ? "Saved!" : "Save tenant info"}
                   </button>
                 </div>
-              </div>
+              </div> : null}
             </div>
           </div>
         </div>
