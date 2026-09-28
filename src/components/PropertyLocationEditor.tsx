@@ -45,6 +45,12 @@ export function PropertyLocationEditor({ property, propertySlug, initialEditing 
     }
   }, [property, propertySlug, initialEditing]);
 
+  useEffect(() => {
+    if (!savedAt) return;
+    const timeout = window.setTimeout(() => setSavedAt(null), 5000);
+    return () => window.clearTimeout(timeout);
+  }, [savedAt]);
+
   function updateField<K extends keyof PropertyDraft>(field: K, value: PropertyDraft[K]) {
     setDraft((current) => ({
       ...current,

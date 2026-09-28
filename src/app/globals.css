@@ -310,6 +310,7 @@ button {
 }
 
 .property-page-title strong { color: var(--text); }
+.property-name-eyebrow { margin-bottom: 8px !important; color: var(--accent-strong); font-family: var(--font-heading), sans-serif; font-size: clamp(1.35rem, 2.4vw, 1.8rem); letter-spacing: .04em; line-height: 1.15; text-transform: none; }
 .property-header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .property-header-actions > .save-confirmation-card { flex: 1 0 100%; order: 1; }
 .save-confirmation-card { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; border: 1px solid rgba(255,0,0,.34); border-radius: 14px; color: var(--text); background: rgba(255,0,0,.09); }
@@ -1021,9 +1022,17 @@ button {
 .unit-delete-icon:hover { background: rgba(255,49,49,.25); }
 .unit-delete-confirm { flex: 1 1 100%; }
 .unit-tenant-list { display: grid; gap: 10px; }
-.unit-tenant-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border: 1px solid rgba(255,0,0,.08); border-radius: 14px; background: rgba(255,255,255,.04); }
-.unit-tenant-card > div { display: grid; gap: 4px; min-width: 0; }
-.unit-tenant-card > div span { color: var(--muted); overflow-wrap: anywhere; }
+.unit-tenant-card { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; padding: 14px; border: 1px solid rgba(255,0,0,.08); border-radius: 14px; background: rgba(255,255,255,.04); }
+.tenant-card-fields { display: grid; grid-template-columns: minmax(130px,1fr) minmax(120px,.8fr) minmax(160px,1.2fr); align-items: center; gap: 10px; min-width: 0; }
+.tenant-card-fields > span { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tenant-card-fields strong { color: var(--text); }
+.tenant-card-actions { display: flex; align-items: center; gap: 6px; }
+.tenant-card-editing { grid-template-columns: minmax(0,1fr); gap: 12px; }
+.tenant-card-editing > h4 { margin: 0; }
+.tenant-editor-fields { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.tenant-edit-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 12px; border-top: 1px solid rgba(255,0,0,.12); }
+.tenant-delete-prompt { grid-column: 1 / -1; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding-top: 10px; border-top: 1px solid rgba(255,0,0,.12); }
+.tenant-delete-prompt > span { margin-right: auto; color: var(--muted); }
 .tenant-edit-panel { display: grid; gap: 14px; padding: 16px; border: 1px solid rgba(255,0,0,.08); border-radius: 16px; background: rgba(255,255,255,.025); }
 .tenant-edit-panel .modal-section-header { margin: 0; }
 .unit-utilities { display: flex; flex-wrap: wrap; gap: 14px 24px; min-width: 0; margin: 0; padding: 14px; border: 1px solid rgba(255,0,0,.1); border-radius: 14px; }
@@ -1252,4 +1261,9 @@ button {
   .calendar-task-item > span:last-child { grid-column: 1 / -1; }
   .task-tabs { width: 100%; }
   .task-tab { flex: 1; padding-inline: 10px; }
+  .tenant-card-fields { grid-template-columns: 1fr; gap: 5px; }
+  .tenant-editor-fields { grid-template-columns: 1fr; }
+  .tenant-card-fields > span { white-space: normal; overflow-wrap: anywhere; }
+  .tenant-delete-prompt { flex-wrap: wrap; justify-content: flex-start; }
+  .tenant-delete-prompt > span { flex-basis: 100%; }
 }

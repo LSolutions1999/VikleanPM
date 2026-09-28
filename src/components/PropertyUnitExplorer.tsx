@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Pencil, Plus, Search, X } from "lucide-react";
+import { CheckCircle2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { LeaseTerm, Property, Tenant, Unit } from "@/lib/types";
 
@@ -60,6 +60,8 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
   const [editingUnits, setEditingUnits] = useState(false);
   const [unitEditing, setUnitEditing] = useState(false);
   const [editingTenantId, setEditingTenantId] = useState<string | null>(null);
+  const [confirmDeleteTenantId, setConfirmDeleteTenantId] = useState<string | null>(null);
+  const [deletingTenantId, setDeletingTenantId] = useState<string | null>(null);
   const [detailTab, setDetailTab] = useState<"unit" | "tenant" | "lease">("unit");
   const [confirmDeleteUnit, setConfirmDeleteUnit] = useState(false);
   const [isAddingUnit, setIsAddingUnit] = useState(false);
@@ -73,6 +75,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
   const [addUnitError, setAddUnitError] = useState<string | null>(null);
   const [tenantSaving, setTenantSaving] = useState(false);
   const [tenantSaved, setTenantSaved] = useState(false);
+  const [tenantDeleted, setTenantDeleted] = useState(false);
   const [tenantError, setTenantError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -89,6 +92,8 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
       setConfirmDeleteUnit(false);
       setUnitSaved(false);
       setTenantSaved(false);
+      setTenantDeleted(false);
+      setConfirmDeleteTenantId(null);
       setDetailTab("unit");
       setDrafts((current) => ({
         ...current,
@@ -99,10 +104,27 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [selectedUnit]);
 
+  useEffect(() => {
+    if (!unitSaved) return;
+    const timeout = window.setTimeout(() => setUnitSaved(false), 5000);
+    return () => window.clearTimeout(timeout);
+  }, [unitSaved]);
+
+  useEffect(() => {
+    if (!tenantSaved) return;
+    const timeout = window.setTimeout(() => setTenantSaved(false), 5000);
+    return () => window.clearTimeout(timeout);
+  }, [tenantSaved]);
+
+  useEffect(() => {
+    if (!tenantDeleted) return;
+    const timeout = window.setTimeout(() => setTenantDeleted(false), 5000);
+    return () => window.clearTimeout(timeout);
+  }, [tenantDeleted]);
+
   const activeDraft = selectedUnit ? drafts[selectedUnit.id] ?? null : null;
   const activeUnit = selectedUnit && activeDraft ? { ...selectedUnit, ...activeDraft } : selectedUnit;
   const tenantsForSelectedUnit = selectedUnit ? unitTenants.filter((tenant) => tenant.unitId === selectedUnit.id) : [];
-  const activeTenantDraft = editingTenantId ? tenantDrafts[editingTenantId] ?? null : null;
   const filteredUnits = units.filter((unit) => {
     const query = unitSearch.trim().toLowerCase();
     if (!query) return true;
@@ -386,7 +408,71 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
     setTenantDrafts((current) => ({ ...current, [savedTenant.id]: activeTenantDraft }));
     if (isNewTenant) setEditingTenantId(savedTenant.id);
     setTenantSaved(true);
+    setTenantDeleted(false);
     setEditingTenantId(null);
+  }
+
+  async function deleteTenant(tenant: Tenant) {
+    setDeletingTenantId(tenant.id);
+    setTenantError(null);
+    setTenantSaved(false);
+
+    if (/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(tenant.id)) {
+      const { data, error } = await supabase
+        .from("tenants")
+        .delete()
+        .eq("id", tenant.id)
+        .select("id")
+        .maybeSingle();
+
+      if (error || !data) {
+        setTenantError(error?.message ?? "Tenant could not be deleted.");
+        setDeletingTenantId(null);
+        return;
+      }
+    }
+
+    setUnitTenants((current) => current.filter((row) => row.id !== tenant.id));
+    setTenantDrafts((current) => {
+      const next = { ...current };
+      delete next[tenant.id];
+      return next;
+    });
+    setConfirmDeleteTenantId(null);
+    setTenantDeleted(true);
+    setDeletingTenantId(null);
+  }
+
+  function cancelTenantEdit(tenantId: string) {
+    setEditingTenantId(null);
+    setTenantDrafts((current) => {
+      const next = { ...current };
+      delete next[tenantId];
+      return next;
+    });
+    setTenantError(null);
+    setTenantSaved(false);
+  }
+
+  function renderTenantEditor(tenantId: string, heading: string) {
+    const draft = tenantDrafts[tenantId];
+    if (!draft) return null;
+
+    return (
+      <article key={tenantId} className="unit-tenant-card tenant-card-editing">
+        <h4>{heading}</h4>
+        <div className="form-grid tenant-editor-fields">
+          <label><span>Name</span><input value={draft.name} onChange={(event) => updateTenantDraft("name", event.target.value)} /></label>
+          <label><span>Phone</span><input value={draft.phone} onChange={(event) => updateTenantDraft("phone", event.target.value)} /></label>
+          <label><span>Email</span><input type="email" value={draft.email} onChange={(event) => updateTenantDraft("email", event.target.value)} /></label>
+        </div>
+        {tenantError ? <p className="form-message" role="alert">{tenantError}</p> : null}
+        <div className="tenant-edit-actions">
+          <button type="button" className="ghost-button" onClick={() => cancelTenantEdit(tenantId)} disabled={tenantSaving}>Cancel</button>
+          <button type="button" className="primary-button" onClick={saveTenantChanges} disabled={tenantSaving}>{tenantSaving ? "Saving..." : "Save tenant"}</button>
+        </div>
+      </article>
+    );
   }
 
   return (
@@ -493,10 +579,14 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
             </section> : null}
 
             {detailTab === "tenant" ? <section className="unit-detail-page">
-              <div className="modal-section-header"><h3>Tenant</h3><button type="button" className="primary-button" onClick={() => { const draftId = "new-" + crypto.randomUUID(); setTenantDrafts((current) => ({ ...current, [draftId]: { ...blankTenantDraft } })); setEditingTenantId(draftId); setTenantSaved(false); setTenantError(null); }}><Plus size={16} /> Add tenant</button></div>
+              <div className="modal-section-header"><h3>Tenant</h3><button type="button" className="primary-button" disabled={Boolean(editingTenantId)} onClick={() => { const draftId = "new-" + crypto.randomUUID(); setTenantDrafts((current) => ({ ...current, [draftId]: { ...blankTenantDraft } })); setEditingTenantId(draftId); setTenantSaved(false); setTenantDeleted(false); setTenantError(null); }}><Plus size={16} /> Add tenant</button></div>
               {tenantSaved ? <div className="save-confirmation-card" role="status"><CheckCircle2 size={19} /><span>Tenant information saved successfully.</span></div> : null}
-              {tenantsForSelectedUnit.length ? <div className="unit-tenant-list">{tenantsForSelectedUnit.map((row) => <article key={row.id} className="unit-tenant-card"><div><strong>{row.name || "Unnamed tenant"}</strong><span>{row.phone || "No phone"}</span><span>{row.email || "No email"}</span></div><button type="button" className="ghost-button unit-edit-icon" onClick={() => { setTenantDrafts((current) => ({ ...current, [row.id]: current[row.id] ?? { name: row.name, phone: row.phone, email: row.email, leaseStart: row.leaseStart, leaseEnd: row.leaseEnd, leaseFileName: row.leaseFileName } })); setEditingTenantId(row.id); setTenantSaved(false); setTenantError(null); }} aria-label={`Edit ${row.name || "tenant"}`} title="Edit tenant"><Pencil size={17} /></button></article>)}</div> : <p className="muted">No tenants have been added to this unit.</p>}
-              {activeTenantDraft && editingTenantId ? <div className="tenant-edit-panel"><div className="modal-section-header"><h4>{editingTenantId.startsWith("new-") ? "New tenant" : "Edit tenant"}</h4><button type="button" className="ghost-button" onClick={() => { setEditingTenantId(null); setTenantSaved(false); setTenantError(null); }}>Cancel</button></div><div className="form-grid"><label className="full"><span>Name</span><input value={activeTenantDraft.name} onChange={(event) => updateTenantDraft("name", event.target.value)} /></label><label><span>Phone</span><input value={activeTenantDraft.phone} onChange={(event) => updateTenantDraft("phone", event.target.value)} /></label><label><span>Email</span><input type="email" value={activeTenantDraft.email} onChange={(event) => updateTenantDraft("email", event.target.value)} /></label></div>{tenantError ? <p className="form-message" role="alert">{tenantError}</p> : null}<div className="modal-actions"><button type="button" className="primary-button unit-save-button" onClick={saveTenantChanges} disabled={tenantSaving}>{tenantSaving ? "Saving..." : tenantSaved ? "Saved!" : "Save tenant"}</button></div></div> : null}
+              {tenantDeleted ? <div className="save-confirmation-card" role="status"><CheckCircle2 size={19} /><span>Tenant deleted successfully.</span></div> : null}
+              {tenantError && !editingTenantId ? <p className="form-message" role="alert">{tenantError}</p> : null}
+              {tenantsForSelectedUnit.length || editingTenantId?.startsWith("new-") ? <div className="unit-tenant-list">
+                {tenantsForSelectedUnit.map((row) => editingTenantId === row.id ? renderTenantEditor(row.id, row.name || "Edit tenant") : <article key={row.id} className="unit-tenant-card"><div className="tenant-card-fields"><span><strong>Name:</strong> {row.name || "Unnamed tenant"}</span><span><strong>Phone:</strong> {row.phone || "—"}</span><span><strong>Email:</strong> {row.email || "—"}</span></div><div className="tenant-card-actions"><button type="button" className="ghost-button unit-edit-icon" disabled={Boolean(editingTenantId)} onClick={() => { setTenantDrafts((current) => ({ ...current, [row.id]: { name: row.name, phone: row.phone, email: row.email, leaseStart: row.leaseStart, leaseEnd: row.leaseEnd, leaseFileName: row.leaseFileName } })); setEditingTenantId(row.id); setTenantSaved(false); setTenantDeleted(false); setTenantError(null); setConfirmDeleteTenantId(null); }} aria-label={`Edit ${row.name || "tenant"}`} title="Edit tenant"><Pencil size={17} /></button><button type="button" className="unit-delete-icon" onClick={() => { setConfirmDeleteTenantId(row.id); setTenantError(null); }} disabled={deletingTenantId !== null || Boolean(editingTenantId)} aria-label={`Delete ${row.name || "tenant"}`} title="Delete tenant"><Trash2 size={16} /></button></div>{confirmDeleteTenantId === row.id ? <div className="tenant-delete-prompt"><span>Delete {row.name || "this tenant"}?</span><button type="button" className="ghost-button" onClick={() => setConfirmDeleteTenantId(null)} disabled={deletingTenantId === row.id}>Cancel</button><button type="button" className="primary-button danger-action" onClick={() => deleteTenant(row)} disabled={deletingTenantId === row.id}>{deletingTenantId === row.id ? "Deleting..." : "Confirm delete"}</button></div> : null}</article>)}
+                {editingTenantId?.startsWith("new-") ? renderTenantEditor(editingTenantId, "New tenant") : null}
+              </div> : <p className="muted">No tenants have been added to this unit.</p>}
             </section> : null}
 
             {detailTab === "lease" ? <section className="unit-detail-page">

@@ -27,7 +27,7 @@ import {
   Search,
   X
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { taskFromRecord, taskRecordSelect, taskToRecord, type TaskRecord } from "@/lib/supabase/task-records";
@@ -104,6 +104,12 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
   const [logTaskId, setLogTaskId] = useState<string | null>(null);
   const [calendarTasks, setCalendarTasks] = useState<Task[] | null>(null);
   const [calendarDate, setCalendarDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    if (!taskConfirmation) return;
+    const timeout = window.setTimeout(() => setTaskConfirmation(null), 5000);
+    return () => window.clearTimeout(timeout);
+  }, [taskConfirmation]);
 
   const isAdmin = session.role === "admin";
   const activeTasks = useMemo(() => tasks.filter((task) => task.status === "Pending" || task.status === "In Progress"), [tasks]);

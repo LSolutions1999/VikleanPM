@@ -28,7 +28,8 @@ export default async function PropertyDetailPage({
   return (
     <div className="content-stack">
       <PageHeader
-        eyebrow={`Property ${property.name}`}
+        eyebrow={property.name}
+        eyebrowClassName="property-name-eyebrow"
         title={<div className="property-page-title"><span><strong>Owner</strong> {property.propertyOwner || "—"}</span><span><strong>Address</strong> {fullAddress}</span></div>}
         action={
           <div className="property-header-actions">
