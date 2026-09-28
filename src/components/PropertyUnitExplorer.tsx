@@ -359,6 +359,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
   }
 
   async function saveTenantChanges() {
+    const activeTenantDraft = editingTenantId ? tenantDrafts[editingTenantId] ?? null : null;
     if (!selectedUnit || !editingTenantId || !activeTenantDraft) {
       return;
     }
