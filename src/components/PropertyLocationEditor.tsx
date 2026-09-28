@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { CheckCircle2, Pencil } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Property } from "@/lib/types";
 
@@ -16,7 +15,6 @@ type PropertyDraft = Pick<Property, "name" | "address" | "city" | "region" | "no
 
 export function PropertyLocationEditor({ property, propertySlug, initialEditing = false }: PropertyLocationEditorProps) {
   const supabase = createClient();
-  const router = useRouter();
   const [draft, setDraft] = useState<PropertyDraft>({
     name: property.name,
     address: property.address,
@@ -40,7 +38,12 @@ export function PropertyLocationEditor({ property, propertySlug, initialEditing 
       notes: property.notes
     });
     setEditing(initialEditing);
-  }, [property, initialEditing]);
+    const savedTime = window.sessionStorage.getItem(`property-save:${propertySlug}`);
+    if (savedTime) {
+      setSavedAt(savedTime);
+      window.sessionStorage.removeItem(`property-save:${propertySlug}`);
+    }
+  }, [property, propertySlug, initialEditing]);
 
   function updateField<K extends keyof PropertyDraft>(field: K, value: PropertyDraft[K]) {
     setDraft((current) => ({
@@ -83,10 +86,10 @@ export function PropertyLocationEditor({ property, propertySlug, initialEditing 
       return;
     }
 
-    setSavedAt(new Date().toLocaleTimeString());
+    window.sessionStorage.setItem(`property-save:${propertySlug}`, new Date().toLocaleTimeString());
     setEditing(false);
-    router.replace(`/properties/${propertySlug}`, { scroll: false });
-    router.refresh();
+    window.history.replaceState(null, "", window.location.pathname);
+    window.location.reload();
   }
 
   return (
