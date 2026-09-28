@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { CheckCircle2, Pencil, Plus, Search, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { LeaseTerm, Property, Tenant, Unit } from "@/lib/types";
 
@@ -441,11 +441,13 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
     });
     setConfirmDeleteTenantId(null);
     setTenantDeleted(true);
+    setEditingTenantId((current) => current === tenant.id ? null : current);
     setDeletingTenantId(null);
   }
 
   function cancelTenantEdit(tenantId: string) {
     setEditingTenantId(null);
+    setConfirmDeleteTenantId(null);
     setTenantDrafts((current) => {
       const next = { ...current };
       delete next[tenantId];
@@ -457,6 +459,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
 
   function renderTenantEditor(tenantId: string, heading: string) {
     const draft = tenantDrafts[tenantId];
+    const existingTenant = tenantsForSelectedUnit.find((tenant) => tenant.id === tenantId);
     if (!draft) return null;
 
     return (
@@ -468,9 +471,11 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
           <label><span>Email</span><input type="email" value={draft.email} onChange={(event) => updateTenantDraft("email", event.target.value)} /></label>
         </div>
         {tenantError ? <p className="form-message" role="alert">{tenantError}</p> : null}
+        {existingTenant && confirmDeleteTenantId === tenantId ? <div className="tenant-delete-prompt"><span>Delete this tenant? This cannot be undone.</span><button type="button" className="ghost-button" onClick={() => setConfirmDeleteTenantId(null)} disabled={deletingTenantId === tenantId}>Keep tenant</button><button type="button" className="primary-button danger-action" onClick={() => deleteTenant(existingTenant)} disabled={deletingTenantId === tenantId}>{deletingTenantId === tenantId ? "Deleting..." : "Confirm delete"}</button></div> : null}
         <div className="tenant-edit-actions">
-          <button type="button" className="ghost-button" onClick={() => cancelTenantEdit(tenantId)} disabled={tenantSaving}>Cancel</button>
-          <button type="button" className="primary-button" onClick={saveTenantChanges} disabled={tenantSaving}>{tenantSaving ? "Saving..." : "Save tenant"}</button>
+          {existingTenant ? <button type="button" className="primary-button danger-action" onClick={() => { setConfirmDeleteTenantId(tenantId); setTenantError(null); }} disabled={tenantSaving || deletingTenantId !== null}>Delete tenant</button> : null}
+          <button type="button" className="ghost-button" onClick={() => cancelTenantEdit(tenantId)} disabled={tenantSaving || deletingTenantId === tenantId}>Cancel</button>
+          <button type="button" className="primary-button" onClick={saveTenantChanges} disabled={tenantSaving || deletingTenantId === tenantId}>{tenantSaving ? "Saving..." : "Save tenant"}</button>
         </div>
       </article>
     );
@@ -479,15 +484,12 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
   return (
     <>
       <section className="panel">
-        <p className="eyebrow">Units</p>
+        <div className="section-heading-with-edit"><p className="eyebrow">Units</p><button type="button" className="header-edit-button" onClick={() => { setEditingUnits((current) => !current); setIsAddingUnit(false); }} aria-label={editingUnits ? "Done editing units" : "Edit units"} title={editingUnits ? "Done editing units" : "Edit units"} aria-pressed={editingUnits}><Pencil size={17} /></button></div>
         <div className="unit-search-controls">
           <label className="search-field unit-search-field">
             <span>Search units</span>
             <div className="input-with-icon"><Search size={16} /><input value={unitSearch} onChange={(event) => setUnitSearch(event.target.value)} placeholder="Unit number, status, or tenant" /></div>
           </label>
-          <button type="button" className={editingUnits ? "ghost-button" : "primary-button"} onClick={() => { setEditingUnits((current) => !current); setIsAddingUnit(false); }}>
-            {editingUnits ? "Done" : "Edit"}
-          </button>
         </div>
         {editingUnits ? <div className="unit-edit-toolbar"><span className="muted">Select a unit to edit its details.</span><button type="button" className="ghost-button" onClick={() => setIsAddingUnit((current) => !current)}>{isAddingUnit ? "Close add form" : "Add unit"}</button></div> : null}
         {isAddingUnit ? (
@@ -557,7 +559,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
         <div className="modal-backdrop" onClick={() => setSelectedUnit(null)} role="presentation">
           <div className="modal-panel unit-details-modal" role="dialog" aria-modal="true" aria-labelledby="unit-modal-title" onClick={(event) => event.stopPropagation()}>
             <div className="modal-header">
-              <div><p className="eyebrow">Unit details</p><h3 id="unit-modal-title">Unit {activeUnit?.number ?? selectedUnit.number}</h3></div>
+              <div><div className="unit-modal-heading"><p className="eyebrow">Unit details</p>{!unitEditing ? <button type="button" className="header-edit-button" onClick={() => { setUnitEditing(true); setUnitSaved(false); setConfirmDeleteUnit(false); }} aria-label="Edit unit details" title="Edit unit details"><Pencil size={17} /></button> : null}</div><h3 id="unit-modal-title">Unit {activeUnit?.number ?? selectedUnit.number}</h3></div>
               <button type="button" className="icon-button" onClick={() => setSelectedUnit(null)} aria-label="Close unit details"><X size={18} /></button>
             </div>
             <div className="unit-detail-tabs" role="tablist" aria-label="Unit details pages">
@@ -576,7 +578,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
               </div>
               {unitError ? <p className="form-message" role="alert">{unitError}</p> : null}
               {unitSaved ? <div className="save-confirmation-card" role="status"><CheckCircle2 size={19} /><span>Unit details saved successfully.</span></div> : null}
-              <div className="unit-tab-actions">{unitEditing ? <><button type="button" className="ghost-button" onClick={() => { setDrafts((current) => ({ ...current, [selectedUnit.id]: unitToDraft(selectedUnit) })); setUnitEditing(false); setConfirmDeleteUnit(false); setUnitSaved(false); }}>Cancel</button><div className="unit-save-row"><button type="button" className="primary-button unit-save-button" onClick={saveUnitChanges} disabled={unitSaving}>{unitSaving ? "Saving..." : unitSaved ? "Saved!" : "Save unit"}</button>{confirmDeleteUnit ? <div className="unit-delete-confirm"><p>Delete this unit? This action cannot be undone.</p><div className="modal-actions"><button type="button" className="ghost-button" onClick={() => setConfirmDeleteUnit(false)} disabled={unitSaving}>Keep unit</button><button type="button" className="primary-button danger-action" onClick={deleteUnit} disabled={unitSaving}>{unitSaving ? "Deleting..." : "Confirm delete"}</button></div></div> : <button type="button" className="unit-delete-icon" onClick={() => setConfirmDeleteUnit(true)} disabled={unitSaving} aria-label="Delete unit" title="Delete unit"><X size={19} /></button>}</div></> : <button type="button" className="ghost-button unit-edit-icon" onClick={() => { setUnitEditing(true); setUnitSaved(false); setConfirmDeleteUnit(false); }} aria-label="Edit unit" title="Edit unit"><Pencil size={17} /></button>}</div>
+              {unitEditing ? <div className="unit-tab-actions"><button type="button" className="ghost-button" onClick={() => { setDrafts((current) => ({ ...current, [selectedUnit.id]: unitToDraft(selectedUnit) })); setUnitEditing(false); setConfirmDeleteUnit(false); setUnitSaved(false); }}>Cancel</button><div className="unit-save-row"><button type="button" className="primary-button unit-save-button" onClick={saveUnitChanges} disabled={unitSaving}>{unitSaving ? "Saving..." : unitSaved ? "Saved!" : "Save unit"}</button>{confirmDeleteUnit ? <div className="unit-delete-confirm"><p>Delete this unit? This action cannot be undone.</p><div className="modal-actions"><button type="button" className="ghost-button" onClick={() => setConfirmDeleteUnit(false)} disabled={unitSaving}>Keep unit</button><button type="button" className="primary-button danger-action" onClick={deleteUnit} disabled={unitSaving}>{unitSaving ? "Deleting..." : "Confirm delete"}</button></div></div> : <button type="button" className="unit-delete-icon" onClick={() => setConfirmDeleteUnit(true)} disabled={unitSaving} aria-label="Delete unit" title="Delete unit"><X size={19} /></button>}</div></div> : null}
             </section> : null}
 
             {detailTab === "tenant" ? <section className="unit-detail-page">
@@ -585,7 +587,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
               {tenantDeleted ? <div className="save-confirmation-card" role="status"><CheckCircle2 size={19} /><span>Tenant deleted successfully.</span></div> : null}
               {tenantError && !editingTenantId ? <p className="form-message" role="alert">{tenantError}</p> : null}
               {tenantsForSelectedUnit.length || editingTenantId?.startsWith("new-") ? <div className="unit-tenant-list">
-                {tenantsForSelectedUnit.map((row) => editingTenantId === row.id ? renderTenantEditor(row.id, row.name || "Edit tenant") : <article key={row.id} className="unit-tenant-card"><div className="tenant-card-fields"><span><strong>Name:</strong> {row.name || "Unnamed tenant"}</span><span><strong>Phone:</strong> {row.phone || "—"}</span><span><strong>Email:</strong> {row.email || "—"}</span></div><div className="tenant-card-actions"><button type="button" className="ghost-button unit-edit-icon" disabled={Boolean(editingTenantId)} onClick={() => { setTenantDrafts((current) => ({ ...current, [row.id]: { name: row.name, phone: row.phone, email: row.email, leaseStart: row.leaseStart, leaseEnd: row.leaseEnd, leaseFileName: row.leaseFileName } })); setEditingTenantId(row.id); setTenantSaved(false); setTenantDeleted(false); setTenantError(null); setConfirmDeleteTenantId(null); }} aria-label={`Edit ${row.name || "tenant"}`} title="Edit tenant"><Pencil size={17} /></button><button type="button" className="unit-delete-icon" onClick={() => { setConfirmDeleteTenantId(row.id); setTenantError(null); }} disabled={deletingTenantId !== null || Boolean(editingTenantId)} aria-label={`Delete ${row.name || "tenant"}`} title="Delete tenant"><Trash2 size={16} /></button></div>{confirmDeleteTenantId === row.id ? <div className="tenant-delete-prompt"><span>Delete {row.name || "this tenant"}?</span><button type="button" className="ghost-button" onClick={() => setConfirmDeleteTenantId(null)} disabled={deletingTenantId === row.id}>Cancel</button><button type="button" className="primary-button danger-action" onClick={() => deleteTenant(row)} disabled={deletingTenantId === row.id}>{deletingTenantId === row.id ? "Deleting..." : "Confirm delete"}</button></div> : null}</article>)}
+                {tenantsForSelectedUnit.map((row) => editingTenantId === row.id ? renderTenantEditor(row.id, row.name || "Edit tenant") : <article key={row.id} className="unit-tenant-card"><div className="tenant-card-fields"><span className="tenant-name-field"><span>{row.name || "Unnamed tenant"}</span><button type="button" className="header-edit-button" disabled={Boolean(editingTenantId)} onClick={() => { setTenantDrafts((current) => ({ ...current, [row.id]: { name: row.name, phone: row.phone, email: row.email, leaseStart: row.leaseStart, leaseEnd: row.leaseEnd, leaseFileName: row.leaseFileName } })); setEditingTenantId(row.id); setTenantSaved(false); setTenantDeleted(false); setTenantError(null); setConfirmDeleteTenantId(null); }} aria-label={`Edit ${row.name || "tenant"}`} title="Edit tenant"><Pencil size={15} /></button></span><span>{row.phone || "—"}</span><span>{row.email || "—"}</span></div></article>)}
                 {editingTenantId?.startsWith("new-") ? renderTenantEditor(editingTenantId, "New tenant") : null}
               </div> : <p className="muted">No tenants have been added to this unit.</p>}
             </section> : null}
@@ -602,7 +604,7 @@ export function PropertyUnitExplorer({ property }: PropertyUnitExplorerProps) {
               </div>
               {unitError ? <p className="form-message" role="alert">{unitError}</p> : null}
               {unitSaved ? <div className="save-confirmation-card" role="status"><CheckCircle2 size={19} /><span>Lease details saved successfully.</span></div> : null}
-              <div className="unit-tab-actions">{unitEditing ? <><button type="button" className="ghost-button" onClick={() => { setDrafts((current) => ({ ...current, [selectedUnit.id]: unitToDraft(selectedUnit) })); setUnitEditing(false); setUnitSaved(false); }}>Cancel</button><button type="button" className="primary-button unit-save-button" onClick={saveUnitChanges} disabled={unitSaving}>{unitSaving ? "Saving..." : unitSaved ? "Saved!" : "Save unit"}</button></> : <button type="button" className="ghost-button unit-edit-icon" onClick={() => { setUnitEditing(true); setUnitSaved(false); }} aria-label="Edit lease" title="Edit lease"><Pencil size={17} /></button>}</div>
+              {unitEditing ? <div className="unit-tab-actions"><button type="button" className="ghost-button" onClick={() => { setDrafts((current) => ({ ...current, [selectedUnit.id]: unitToDraft(selectedUnit) })); setUnitEditing(false); setUnitSaved(false); }}>Cancel</button><button type="button" className="primary-button unit-save-button" onClick={saveUnitChanges} disabled={unitSaving}>{unitSaving ? "Saving..." : unitSaved ? "Saved!" : "Save unit"}</button></div> : null}
             </section> : null}
           </div>
         </div>

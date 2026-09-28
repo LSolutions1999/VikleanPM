@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Pencil, Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -73,10 +73,8 @@ export function PropertyDirectory({ properties }: PropertyDirectoryProps) {
       <PageHeader
         eyebrow="Portfolio"
         title="Properties"
+        titleAction={<button type="button" className="header-edit-button" aria-label={editMode ? "Done editing properties" : "Edit properties"} title={editMode ? "Done editing properties" : "Edit properties"} aria-pressed={editMode} onClick={() => { setEditMode((current) => !current); setAddingLocation(false); }}><Pencil size={17} /></button>}
         description="Browse your properties, units, tenants, and documents."
-        action={<button type="button" className={editMode ? "primary-button" : "ghost-button"} onClick={() => { setEditMode((current) => !current); setAddingLocation(false); }}>
-          {editMode ? <><Check size={17} /> Done</> : <><Pencil size={17} /> Edit mode</>}
-        </button>}
       />
       <div className="property-directory-toolbar">
         <label className="search-field">

@@ -30,13 +30,9 @@ export default async function PropertyDetailPage({
       <PageHeader
         eyebrow={property.name}
         eyebrowClassName="property-name-eyebrow"
+        eyebrowAction={<PropertyLocationEditor property={property} propertySlug={id} initialEditing={query.edit === "true"} />}
         title={<div className="property-page-title"><span><strong>Owner</strong> {property.propertyOwner || "—"}</span><span><strong>Address</strong> {fullAddress}</span></div>}
-        action={
-          <div className="property-header-actions">
-            <PropertyLocationEditor property={property} propertySlug={id} initialEditing={query.edit === "true"} />
-            <Link className="ghost-button" href="/properties"><ArrowLeft size={16} />Back to properties</Link>
-          </div>
-        }
+        action={<Link className="ghost-button" href="/properties"><ArrowLeft size={16} />Back to properties</Link>}
       />
 
       <PropertyUnitExplorer property={property} />

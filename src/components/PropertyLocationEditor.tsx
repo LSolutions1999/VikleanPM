@@ -100,7 +100,7 @@ export function PropertyLocationEditor({ property, propertySlug, initialEditing 
 
   return (
     <>
-      <button type="button" className="ghost-button" onClick={() => setEditing(true)}><Pencil size={16} /> Edit property</button>
+      <button type="button" className="header-edit-button" onClick={() => setEditing(true)} aria-label="Edit property" title="Edit property"><Pencil size={17} /></button>
       {savedAt ? <div className="save-confirmation-card" role="status"><CheckCircle2 size={19} /><span>Property details saved successfully. <small>{savedAt}</small></span></div> : null}
       {editing ? <div className="modal-backdrop" onClick={() => setEditing(false)} role="presentation">
         <div className="modal-panel" role="dialog" aria-modal="true" aria-labelledby="property-edit-title" onClick={(event) => event.stopPropagation()}>

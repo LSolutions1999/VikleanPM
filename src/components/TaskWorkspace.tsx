@@ -101,7 +101,6 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
   const [cancellationReason, setCancellationReason] = useState("");
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [logTaskId, setLogTaskId] = useState<string | null>(null);
   const [calendarTasks, setCalendarTasks] = useState<Task[] | null>(null);
   const [calendarDate, setCalendarDate] = useState<Date | null>(null);
 
@@ -118,7 +117,6 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
   const completingTask = tasks.find((task) => task.id === completingTaskId) ?? null;
   const cancellingTask = tasks.find((task) => task.id === cancellingTaskId) ?? null;
   const deletingTask = tasks.find((task) => task.id === deletingTaskId) ?? null;
-  const logTask = tasks.find((task) => task.id === logTaskId) ?? null;
 
   const filteredActiveTasks = useMemo(() => {
     const query = activeSearch.trim().toLowerCase();
@@ -486,7 +484,7 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
       ) : null}
 
       {selectedTask ? (
-        <Modal title={editing ? "Edit Task" : selectedTask.title} onClose={() => { setSelectedTaskId(null); setEditing(false); }}>
+        <Modal title={editing ? "Edit Task" : selectedTask.title} titleAction={!editing && (isAdmin || selectedTask.createdBy === session.name) && selectedTask.status === "Pending" ? <button type="button" className="header-edit-button" onClick={() => { setEditDraft({ ...selectedTask }); setEditing(true); }} aria-label="Edit task" title="Edit task"><Pencil size={17} /></button> : null} onClose={() => { setSelectedTaskId(null); setEditing(false); }}>
           {taskConfirmation ? <div className="save-confirmation-card" role="status"><CheckCircle2 size={19} /><span>{taskConfirmation}</span></div> : null}
           {editing && editDraft ? (
             <form className="task-edit-form" onSubmit={saveEdit}>
@@ -510,19 +508,15 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
               {selectedTask.completionDate ? <p className="muted">Completed {formatTaskDate(selectedTask.completionDate)}</p> : null}
               {selectedTask.attachments.length ? <div><p className="eyebrow">Attachments</p><ul className="task-attachment-list">{selectedTask.attachments.map((attachment) => <li key={attachment.id}>{attachment.fileName}</li>)}</ul></div> : null}
               {selectedTask.notes.length ? <div className="task-existing-notes"><p className="eyebrow">Notes</p>{selectedTask.notes.map((note) => <article key={note.id}><span>{formatTaskDate(note.createdAt)}</span><p>{note.note}</p></article>)}</div> : null}
-              <details className="task-more-details"><summary>More Details</summary><div className="detail-list task-detail-list"><div className="detail-row"><strong>Submitted</strong><span>{formatTaskDate(selectedTask.createdAt)}</span></div><div className="detail-row"><strong>Issuer</strong><span>{selectedTask.createdBy ?? "Staff"}</span></div><div className="detail-row"><strong>Seen by</strong><span>{selectedTask.seenBy?.length ? selectedTask.seenBy.join(", ") : "No one yet"}</span></div></div><button className="ghost-button" type="button" onClick={() => { setLogTaskId(selectedTask.id); setSelectedTaskId(null); }}>Status Log</button></details>
+              <details className="task-more-details"><summary>More Details</summary><div className="detail-list task-detail-list"><div className="detail-row"><strong>Submitted</strong><span>{formatTaskDate(selectedTask.createdAt)}</span></div><div className="detail-row"><strong>Issuer</strong><span>{selectedTask.createdBy ?? "Staff"}</span></div><div className="detail-row"><strong>Seen by</strong><span>{selectedTask.seenBy?.length ? selectedTask.seenBy.join(", ") : "No one yet"}</span></div></div>{!isAdmin && selectedTask.createdBy === session.name && selectedTask.status === "Pending" ? <div className="task-more-actions"><button type="button" className="ghost-button danger-button" onClick={() => setCancellingTaskId(selectedTask.id)}>Cancel Task</button></div> : null}</details>
               <div className="modal-actions task-modal-actions">
                 {selectedTask.status !== "Completed" && selectedTask.status !== "Cancelled" ? <button type="button" className="primary-button" onClick={() => setCompletingTaskId(selectedTask.id)}>Complete Task</button> : null}
-                {(isAdmin || selectedTask.createdBy === session.name) && selectedTask.status === "Pending" ? <button type="button" className="ghost-button" onClick={() => { setEditDraft({ ...selectedTask }); setEditing(true); }}><Pencil size={16} /> Edit Task</button> : null}
-                {!isAdmin && selectedTask.createdBy === session.name && selectedTask.status === "Pending" ? <button type="button" className="ghost-button danger-button" onClick={() => setCancellingTaskId(selectedTask.id)}>Cancel Task</button> : null}
                 {isAdmin ? <button type="button" className="ghost-button danger-button" onClick={() => { setDeletingTaskId(selectedTask.id); setConfirmDelete(false); }}>Delete Task</button> : null}
               </div>
             </>
           )}
         </Modal>
       ) : null}
-
-      {logTask ? <Modal title={`Status Log: ${logTask.title}`} onClose={() => setLogTaskId(null)}><p className="muted">History of status changes for this task.</p><ol className="task-status-log">{(logTask.statusLog ?? []).slice().reverse().map((entry, index) => <li key={`${entry.timestamp}-${index}`}><strong>{entry.user}</strong> set status to <strong>{entry.status}</strong><span>{formatTaskDate(entry.timestamp)}</span></li>)}</ol></Modal> : null}
 
       {completingTask ? <Modal title="Confirm Task Completion" onClose={() => setCompletingTaskId(null)}><p>You are about to mark this task as complete.</p><div className="task-review-list"><div><strong>{completingTask.title}</strong></div><div><span>Deadline</span><span>{formatTaskDate(completingTask.dueDate)}</span></div><div><span>Completion date</span><span>{formatTaskDate(new Date().toISOString())}</span></div></div><div className="modal-actions"><button className="ghost-button" type="button" onClick={() => setCompletingTaskId(null)}>Back</button><button className="primary-button" type="button" onClick={completeTask}>Confirm Completion</button></div></Modal> : null}
 
@@ -535,11 +529,11 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
   );
 }
 
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+function Modal({ title, titleAction, onClose, children }: { title: string; titleAction?: ReactNode; onClose: () => void; children: ReactNode }) {
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="modal-panel task-modal" role="dialog" aria-modal="true" aria-label={title}>
-        <div className="modal-header"><h3>{title}</h3><button type="button" className="icon-button" aria-label="Close" onClick={onClose}><X size={18} /></button></div>
+        <div className="modal-header"><div className="task-modal-title-line"><h3>{title}</h3>{titleAction}</div><button type="button" className="icon-button" aria-label="Close" onClick={onClose}><X size={18} /></button></div>
         <div className="task-modal-content">{children}</div>
       </section>
     </div>
