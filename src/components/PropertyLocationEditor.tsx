@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pencil } from "lucide-react";
+import { CheckCircle2, Pencil } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Property } from "@/lib/types";
 
@@ -15,6 +16,7 @@ type PropertyDraft = Pick<Property, "name" | "address" | "city" | "region" | "no
 
 export function PropertyLocationEditor({ property, propertySlug, initialEditing = false }: PropertyLocationEditorProps) {
   const supabase = createClient();
+  const router = useRouter();
   const [draft, setDraft] = useState<PropertyDraft>({
     name: property.name,
     address: property.address,
@@ -37,7 +39,6 @@ export function PropertyLocationEditor({ property, propertySlug, initialEditing 
       propertyOwner: property.propertyOwner ?? "",
       notes: property.notes
     });
-    setSavedAt(null);
     setEditing(initialEditing);
   }, [property, initialEditing]);
 
@@ -82,62 +83,34 @@ export function PropertyLocationEditor({ property, propertySlug, initialEditing 
       return;
     }
 
-    setSavedAt(new Date().toLocaleString());
+    setSavedAt(new Date().toLocaleTimeString());
     setEditing(false);
-    window.location.reload();
+    router.replace(`/properties/${propertySlug}`, { scroll: false });
+    router.refresh();
   }
 
   return (
-    <article className="detail-card" style={{ gridColumn: "1 / -1" }}>
-      <div className="modal-section-header">
-        <div>
-          <p className="eyebrow">Location</p>
-          <h3>Site information</h3>
+    <>
+      <button type="button" className="ghost-button" onClick={() => setEditing(true)}><Pencil size={16} /> Edit property</button>
+      {savedAt ? <div className="save-confirmation-card" role="status"><CheckCircle2 size={19} /><span>Property details saved successfully. <small>{savedAt}</small></span></div> : null}
+      {editing ? <div className="modal-backdrop" onClick={() => setEditing(false)} role="presentation">
+        <div className="modal-panel" role="dialog" aria-modal="true" aria-labelledby="property-edit-title" onClick={(event) => event.stopPropagation()}>
+          <div className="modal-header">
+            <div><p className="eyebrow">Property</p><h3 id="property-edit-title">Edit property details</h3></div>
+            <button type="button" className="icon-button" onClick={() => setEditing(false)} aria-label="Close property editor">×</button>
+          </div>
+          <div className="form-grid">
+            <label className="full"><span>Property name</span><input value={draft.name} onChange={(event) => updateField("name", event.target.value)} /></label>
+            <label className="full"><span>Property owner</span><input value={draft.propertyOwner} onChange={(event) => updateField("propertyOwner", event.target.value)} placeholder="Owner name" /></label>
+            <label className="full"><span>Street address</span><input value={draft.address} onChange={(event) => updateField("address", event.target.value)} /></label>
+            <label><span>City</span><input value={draft.city} onChange={(event) => updateField("city", event.target.value)} /></label>
+            <label><span>Region</span><input value={draft.region} onChange={(event) => updateField("region", event.target.value)} /></label>
+            <label className="full"><span>Notes</span><textarea rows={4} value={draft.notes} onChange={(event) => updateField("notes", event.target.value)} /></label>
+          </div>
+          {error ? <p className="form-message" role="alert">{error}</p> : null}
+          <div className="modal-actions"><button type="button" className="ghost-button" onClick={() => { setDraft({ name: property.name, address: property.address, city: property.city, region: property.region, propertyOwner: property.propertyOwner ?? "", notes: property.notes }); setEditing(false); }}>Cancel</button><button type="button" className="primary-button" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save property details"}</button></div>
         </div>
-        <div className="property-location-actions">
-          {savedAt ? <p className="form-message">Saved {savedAt}</p> : null}
-          {editing ? <button type="button" className="ghost-button" onClick={() => { setDraft({ name: property.name, address: property.address, city: property.city, region: property.region, propertyOwner: property.propertyOwner ?? "", notes: property.notes }); setEditing(false); }}>Cancel</button> : <button type="button" className="ghost-button" onClick={() => setEditing(true)}><Pencil size={16} /> Edit</button>}
-        </div>
-      </div>
-
-      {editing ? (
-      <div className="modal-section">
-        <div className="form-grid">
-          <label className="full">
-            <span>Property name</span>
-            <input value={draft.name} onChange={(event) => updateField("name", event.target.value)} />
-          </label>
-          <label className="full">
-            <span>Property owner</span>
-            <input value={draft.propertyOwner} onChange={(event) => updateField("propertyOwner", event.target.value)} placeholder="Owner name" />
-          </label>
-          <label className="full">
-            <span>Address</span>
-            <input value={draft.address} onChange={(event) => updateField("address", event.target.value)} />
-          </label>
-          <label>
-            <span>City</span>
-            <input value={draft.city} onChange={(event) => updateField("city", event.target.value)} />
-          </label>
-          <label>
-            <span>Region</span>
-            <input value={draft.region} onChange={(event) => updateField("region", event.target.value)} />
-          </label>
-          <label className="full">
-            <span>Notes</span>
-            <textarea rows={4} value={draft.notes} onChange={(event) => updateField("notes", event.target.value)} />
-          </label>
-        </div>
-
-        {error ? <p className="form-message">{error}</p> : null}
-
-        <div className="modal-actions">
-          <button type="button" className="primary-button" onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save location details"}
-          </button>
-        </div>
-      </div>
-      ) : null}
-    </article>
+      </div> : null}
+    </>
   );
 }

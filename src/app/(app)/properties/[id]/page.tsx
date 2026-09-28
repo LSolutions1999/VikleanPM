@@ -23,22 +23,20 @@ export default async function PropertyDetailPage({
     notFound();
   }
 
+  const fullAddress = [property.address, property.city, property.region].filter(Boolean).join(", ") || "—";
+
   return (
     <div className="content-stack">
       <PageHeader
-        eyebrow="Property"
-        title={property.name}
+        eyebrow={`Property ${property.name}`}
+        title={<div className="property-page-title"><span><strong>Owner</strong> {property.propertyOwner || "—"}</span><span><strong>Address</strong> {fullAddress}</span></div>}
         action={
-          <Link className="ghost-button" href="/properties">
-            <ArrowLeft size={16} />
-            Back to properties
-          </Link>
+          <div className="property-header-actions">
+            <PropertyLocationEditor property={property} propertySlug={id} initialEditing={query.edit === "true"} />
+            <Link className="ghost-button" href="/properties"><ArrowLeft size={16} />Back to properties</Link>
+          </div>
         }
       />
-
-      <div className="detail-grid">
-        <PropertyLocationEditor property={property} propertySlug={id} initialEditing={query.edit === "true"} />
-      </div>
 
       <PropertyUnitExplorer property={property} />
     </div>

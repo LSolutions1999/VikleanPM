@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   CalendarDays,
   CheckSquare,
+  CheckCircle2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -81,6 +82,7 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
   const supabase = createClient();
   const [tasks, setTasks] = useState(initialTasks);
   const [taskError, setTaskError] = useState(initialError);
+  const [taskConfirmation, setTaskConfirmation] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"active" | "submit" | "previous">("active");
   const [activeView, setActiveView] = useState<ViewMode>("calendar");
   const [previousView, setPreviousView] = useState<ViewMode>("list");
@@ -157,6 +159,7 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
     const existing = tasks.find((task) => task.id === taskId);
     if (!existing) return false;
     setTaskError(null);
+    setTaskConfirmation(null);
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -178,6 +181,7 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
 
     const savedTask = taskFromRecord(data as TaskRecord);
     setTasks((current) => current.map((task) => task.id === taskId ? savedTask : task));
+    setTaskConfirmation("Task changes saved successfully.");
     return true;
   }
 
@@ -207,6 +211,7 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
       seenBy: []
     };
     setTaskError(null);
+    setTaskConfirmation(null);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       setTaskError("Sign in again to submit a task.");
@@ -226,6 +231,7 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
 
     const savedTask = taskFromRecord(data as TaskRecord);
     setTasks((current) => [savedTask, ...current]);
+    setTaskConfirmation("Task submitted successfully.");
     setNewTask(blankTask);
     setConfirmingNewTask(false);
     setActiveTab("active");
@@ -284,12 +290,14 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
   async function deleteTask() {
     if (!deletingTask) return;
     setTaskError(null);
+    setTaskConfirmation(null);
     const { data, error } = await supabase.from("tasks").delete().eq("id", Number(deletingTask.id)).select("id").single();
     if (error || !data) {
       setTaskError(error?.message ?? "The task could not be deleted.");
       return;
     }
     setTasks((current) => current.filter((task) => task.id !== deletingTask.id));
+    setTaskConfirmation("Task deleted successfully.");
     setDeletingTaskId(null);
     setSelectedTaskId(null);
     setConfirmDelete(false);
@@ -388,6 +396,7 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
   return (
     <div className="task-workspace">
       {taskError ? <p className="form-message task-persistence-error" role="alert">Tasks could not be synchronized with Supabase: {taskError}</p> : null}
+      {taskConfirmation && !selectedTask ? <div className="save-confirmation-card" role="status"><CheckCircle2 size={19} /><span>{taskConfirmation}</span></div> : null}
       <div className="task-tabs" role="tablist" aria-label="Task views">
         <button type="button" role="tab" aria-selected={activeTab === "active"} className={activeTab === "active" ? "task-tab active" : "task-tab"} onClick={() => setActiveTab("active")}>Active</button>
         <button type="button" role="tab" aria-selected={activeTab === "submit"} className={activeTab === "submit" ? "task-tab active" : "task-tab"} onClick={() => setActiveTab("submit")}>Submit</button>
@@ -472,6 +481,7 @@ export function TaskWorkspace({ initialTasks, initialError = null, session }: Ta
 
       {selectedTask ? (
         <Modal title={editing ? "Edit Task" : selectedTask.title} onClose={() => { setSelectedTaskId(null); setEditing(false); }}>
+          {taskConfirmation ? <div className="save-confirmation-card" role="status"><CheckCircle2 size={19} /><span>{taskConfirmation}</span></div> : null}
           {editing && editDraft ? (
             <form className="task-edit-form" onSubmit={saveEdit}>
               <div className="form-grid">
